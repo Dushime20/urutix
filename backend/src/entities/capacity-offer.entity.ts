@@ -112,7 +112,7 @@ export class CapacityOffer {
   @Column({ default: true })
   allowMixing: boolean;
 
-  @Column({ length: 16, default: CapacityBookingMode.INSTANT })
+  @Column({ length: 16, default: CapacityBookingMode.REQUEST })
   bookingMode: CapacityBookingMode;
 
   @Column({ length: 24, default: CapacityOfferStatus.OPEN })

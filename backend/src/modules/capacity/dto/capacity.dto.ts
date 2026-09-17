@@ -294,12 +294,19 @@ export class QuoteCapacityDto {
   @IsOptional()
   @IsDateString()
   pickupAt?: string;
+
+  @ApiPropertyOptional({ description: 'Cargo owner offered freight for this leftover slice' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  offeredPrice?: number;
 }
 
 export class BookCapacityDto extends QuoteCapacityDto {
-  @IsOptional()
+  @ApiProperty({ description: 'Cargo the shipper assigns onto this leftover-space truck' })
   @IsUUID()
-  loadId?: string;
+  loadId: string;
 
   @IsOptional()
   @IsString()

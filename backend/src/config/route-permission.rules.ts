@@ -39,7 +39,7 @@ export const ROUTE_PERMISSION_RULES: RoutePermissionRule[] = [
   { methods: ['GET', 'HEAD'], pattern: /^loads(-v2)?(\/|$)/, permissions: ['cargo:view', 'cargo:view_own'] },
   { methods: ['POST'], pattern: /^loads(-v2)?(\/|$)/, permissions: ['cargo:create'] },
   { pattern: /^campaigns(\/|$)/, permissions: ['cargo:create', 'cargo:view', 'cargo:view_own'] },
-  { methods: ['GET', 'HEAD'], pattern: /^capacity\/(marketplace|cities|bookings|offers|stats)/, permissions: ['cargo:view', 'cargo:view_own', 'matching:request', 'fleet:view_own'] },
+  { methods: ['GET', 'HEAD'], pattern: /^capacity\/(marketplace|cities|bookings|offers|stats|assignable-cargos)/, permissions: ['cargo:view', 'cargo:view_own', 'matching:request', 'fleet:view_own'] },
   { methods: ['POST'], pattern: /^capacity\/offers\/.*\/(quote|book)/, permissions: ['cargo:create', 'matching:request'] },
   { methods: ['POST'], pattern: /^capacity\/bookings\/.*\/cancel/, permissions: ['cargo:create', 'cargo:edit'] },
   { methods: ['POST'], pattern: /^capacity\/offers/, permissions: ['fleet:view_own', 'matching:respond'] },

@@ -9,6 +9,7 @@ import {
   PLATFORM_CAPACITY_COMMISSION_RATE,
   quoteCommission,
   quoteFreight,
+  resolveOfferedFreight,
   remainingFromTrip,
   scoreOffer,
   tripWindowsOverlap,
@@ -158,6 +159,15 @@ describe('Airbnb leftover capacity — Kigali → Nairobi 40% empty', () => {
     expect(commission.rate).toBe(8);
     expect(commission.amount).toBe(51.2);
     expect(commission.payer).toBe('CARGO_OWNER');
+  });
+
+  it('lets the cargo owner override the quote with an offered price', () => {
+    const quoted = quoteFreight(leftover40, 4_000, 10);
+    expect(resolveOfferedFreight(quoted, 500)).toBe(500);
+    expect(resolveOfferedFreight(quoted, 0)).toBe(quoted);
+    expect(resolveOfferedFreight(quoted, undefined)).toBe(quoted);
+    const commission = quoteCommission(resolveOfferedFreight(quoted, 500));
+    expect(commission.amount).toBe(40);
   });
 
   it('moves OPEN → PARTIALLY_BOOKED → FULL as leftover space is sold', () => {

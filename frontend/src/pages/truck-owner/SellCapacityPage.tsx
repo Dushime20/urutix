@@ -34,9 +34,6 @@ const apiError = (err: any, fallback: string) =>
   err?.response?.data?.error ||
   fallback;
 
-const inputClass =
-  'w-full px-4 py-2.5 ui-input border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#345E85] focus:border-transparent';
-
 const readOnlyClass =
   'w-full px-4 py-2.5 ui-input border border-slate-100 dark:border-slate-700/80 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200';
 
@@ -98,9 +95,8 @@ const emptyTone = (pct: number) => {
 const LeftoverTripCard: React.FC<{
   row: SellableTruck;
   selected: boolean;
-  askingPrice: string;
   onSelect: () => void;
-}> = ({ row, selected, askingPrice, onSelect }) => {
+}> = ({ row, selected, onSelect }) => {
   const origin = cityLabel('origin', row);
   const destination = cityLabel('destination', row);
   const remainingKg = Math.round(row.remainingWeightKg).toLocaleString();
@@ -185,8 +181,7 @@ const LeftoverTripCard: React.FC<{
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-2">
-        <p className="ui-helper">{askingPrice ? `From ${askingPrice}` : 'Set a price to list'}</p>
+      <div className="flex items-center justify-end gap-2">
         <span className="ui-button text-[#345E85]">
           {selected ? 'Selected' : listed ? 'Already listed' : row.canList ? 'List this trip' : 'Unavailable'}
         </span>
@@ -205,7 +200,6 @@ const SellCapacityPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<SellableTruck | null>(null);
-  const [floorPrice, setFloorPrice] = useState(0);
   const [listingTab, setListingTab] = useState<'live' | 'ended'>('live');
   const publishFormRef = useRef<HTMLElement>(null);
 
@@ -228,7 +222,6 @@ const SellCapacityPage: React.FC = () => {
         : null;
     if (row) {
       setSelected(row);
-      setFloorPrice(Math.round(row.suggestedFloorPrice));
     }
   }, [tripId, truckId]);
 
@@ -247,12 +240,10 @@ const SellCapacityPage: React.FC = () => {
 
   const clearSelection = () => {
     setSelected(null);
-    setFloorPrice(0);
   };
 
   const applySellable = (row: SellableTruck) => {
     setSelected(row);
-    setFloorPrice(Math.round(row.suggestedFloorPrice));
     window.requestAnimationFrame(() => {
       publishFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
@@ -260,13 +251,12 @@ const SellCapacityPage: React.FC = () => {
 
   const publish = async () => {
     if (!selected?.tripId) return toast.error('Choose a trip with leftover space');
-    if (floorPrice <= 0) return toast.error('Set a price for the remaining space');
     setSaving(true);
     try {
       await capacityApi.createOffer({
         truckId: selected.truckId,
         tripId: selected.tripId,
-        floorPrice,
+        bookingMode: 'REQUEST',
       });
       toast.success('Leftover space is now for sale');
       clearSelection();
@@ -344,14 +334,6 @@ const SellCapacityPage: React.FC = () => {
         ),
       },
       {
-        key: 'floorPrice',
-        label: 'Asking price',
-        sortable: true,
-        render: (_: unknown, offer: CapacityOffer) => (
-          <p className="ui-table-body">{compact(offer.floorPrice || 0)}</p>
-        ),
-      },
-      {
         key: 'status',
         label: 'Status',
         sortable: true,
@@ -361,9 +343,7 @@ const SellCapacityPage: React.FC = () => {
               label={offer.status.replaceAll('_', ' ')}
               variant={offerStatusVariant(offer.status)}
             />
-            <p className="ui-helper">
-              {offer.bookingMode === 'INSTANT' ? 'Instant book' : 'Request to book'}
-            </p>
+            <p className="ui-helper">Owner confirms bookings</p>
           </div>
         ),
       },
@@ -381,7 +361,7 @@ const SellCapacityPage: React.FC = () => {
         ),
       },
     ],
-    [compact],
+    [],
   );
 
   const listingActions: TableAction<CapacityOffer>[] = useMemo(
@@ -500,7 +480,6 @@ const SellCapacityPage: React.FC = () => {
                 key={row.tripId || row.truckId}
                 row={row}
                 selected={selected?.tripId === row.tripId}
-                askingPrice={row.suggestedFloorPrice > 0 ? compact(row.suggestedFloorPrice) : ''}
                 onSelect={() => applySellable(row)}
               />
             ))}
@@ -581,29 +560,12 @@ const SellCapacityPage: React.FC = () => {
             ) : null}
           </div>
 
-          <label className="block max-w-md">
-            <span className="ui-label">Price for remaining space</span>
-            <input
-              type="number"
-              min={1}
-              value={floorPrice || ''}
-              onChange={(e) => setFloorPrice(Number(e.target.value) || 0)}
-              className={inputClass}
-              placeholder="Enter your asking price"
-            />
-            {selected.suggestedFloorPrice > 0 ? (
-              <p className="ui-helper mt-1.5">
-                Suggested: {compact(selected.suggestedFloorPrice)} for {Math.round(selected.remainingWeightKg).toLocaleString()} kg
-              </p>
-            ) : null}
-          </label>
-
           <p className="ui-body-small">
-            Platform match fee is 8% of the leftover freight, billed to the cargo owner at booking. You keep the freight.
+            Cargo owners set the offered price when they request leftover space. You confirm or reject each request. Platform match fee is 8% of freight, billed to the cargo owner — you keep the freight.
           </p>
           <button
             type="button"
-            disabled={saving || !selected?.canList || floorPrice <= 0}
+            disabled={saving || !selected?.canList}
             onClick={publish}
             className="px-6 py-3 rounded-xl bg-[#345E85] text-white ui-button disabled:opacity-50"
           >
@@ -629,7 +591,9 @@ const SellCapacityPage: React.FC = () => {
         <section className="bg-white dark:bg-slate-900 rounded-[2rem] border border-amber-100 dark:border-amber-900/40 p-6 space-y-4">
           <div>
             <h2 className="ui-section-title text-amber-600">Requests waiting</h2>
-            <p className="ui-body-small mt-1">Cargo owners asked to use leftover space on your live listings.</p>
+            <p className="ui-body-small mt-1">
+              Cargo owners assigned cargo to leftover space. Confirm to notify the driver with pickup and delivery details.
+            </p>
           </div>
           {pending.map((booking) => (
             <div
@@ -639,7 +603,15 @@ const SellCapacityPage: React.FC = () => {
               <div className="min-w-[200px]">
                 <p className="ui-table-body">{booking.title || booking.corridor || 'Leftover-space request'}</p>
                 <p className="ui-body-small mt-1">
-                  {booking.weightKg.toLocaleString()} kg · {compact(booking.freightAmount)} freight · {booking.commissionRate}% fee
+                  {booking.weightKg.toLocaleString()} kg · offered {compact(booking.offeredPrice || booking.freightAmount)} · {booking.commissionRate}% fee
+                </p>
+                <p className="ui-helper mt-1 inline-flex items-center gap-1">
+                  <MapPin size={11} />
+                  {booking.pickupLabel || booking.origin?.name || 'Pickup'} at {formatWhen(booking.pickupDate)}
+                </p>
+                <p className="ui-helper mt-0.5 inline-flex items-center gap-1">
+                  <MapPin size={11} />
+                  {booking.deliveryLabel || booking.destination?.name || 'Delivery'} at {formatWhen(booking.deliveryDate)}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -649,7 +621,7 @@ const SellCapacityPage: React.FC = () => {
                     capacityApi
                       .accept(booking.id)
                       .then(load)
-                      .then(() => toast.success('Space booked'))
+                      .then(() => toast.success('Cargo confirmed. Driver notified with pickup and delivery details.'))
                       .catch((err) => toast.error(apiError(err, 'Accept failed')))
                   }
                   className="px-3 py-2 rounded-xl bg-emerald-600 text-white ui-button"

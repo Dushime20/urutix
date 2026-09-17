@@ -106,6 +106,13 @@ export class CapacityController {
     return this.capacity.marketplace(query, req.user.tenantId);
   }
 
+  @Get('assignable-cargos')
+  @Roles(...SHIPPERS)
+  @ApiOperation({ summary: 'Unassigned cargos a shipper can put on leftover truck space' })
+  assignableCargos(@Request() req: any) {
+    return this.capacity.assignableCargos(req.user.tenantId, req.user.userId || req.user.id);
+  }
+
   @Post('offers/:id/quote')
   @Roles(...SHIPPERS)
   @ApiOperation({ summary: 'Quote freight + platform commission for a leftover-space slice' })
@@ -119,7 +126,7 @@ export class CapacityController {
 
   @Post('offers/:id/book')
   @Roles(...SHIPPERS)
-  @ApiOperation({ summary: 'Book unused space. Instant listings confirm; request listings wait for the owner.' })
+  @ApiOperation({ summary: 'Request leftover space. Assign cargo, set offered price; truck owner must confirm.' })
   book(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: BookCapacityDto,

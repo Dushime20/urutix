@@ -368,6 +368,14 @@ export const quoteCommission = (freightAmount: number, commissionRate = PLATFORM
   return { rate, amount, payer: 'CARGO_OWNER' as const };
 };
 
+/** Cargo owner may bid an offered price; otherwise the listing quote is used. */
+export const resolveOfferedFreight = (quotedFreight: number, offeredPrice?: number | null): number => {
+  if (offeredPrice == null || offeredPrice === undefined) return quotedFreight;
+  const offered = Number(offeredPrice);
+  if (!Number.isFinite(offered) || offered <= 0) return quotedFreight;
+  return roundMoney(offered);
+};
+
 export const bookableStatuses: OfferStatus[] = ['OPEN', 'PARTIALLY_BOOKED'];
 
 export function hardFilterOffer(offer: OfferMatchInput, query: SearchQuery): string | null {

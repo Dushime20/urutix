@@ -5,17 +5,20 @@ import { CapacityBooking } from '../../entities/capacity-booking.entity';
 import { Truck } from '../../entities/truck.entity';
 import { Trip } from '../../entities/trip.entity';
 import { Load } from '../../entities/load.entity';
+import { Driver } from '../../entities/driver.entity';
 import { Payment } from '../../entities/payment.entity';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 import { CampaignsModule } from '../campaigns/campaigns.module';
+import { NotificationModule } from '../notifications/notification.module';
 import { CapacityController } from './capacity.controller';
 import { CapacityService } from './capacity.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CapacityOffer, CapacityBooking, Truck, Trip, Load, Payment]),
+    TypeOrmModule.forFeature([CapacityOffer, CapacityBooking, Truck, Trip, Load, Driver, Payment]),
     EnhancedAuthModule,
     CampaignsModule,
+    NotificationModule,
   ],
   controllers: [CapacityController],
   providers: [CapacityService],

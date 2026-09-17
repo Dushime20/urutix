@@ -21,6 +21,7 @@ import {
 } from '../../entities/capacity-booking.entity';
 import { Truck, VehicleStatus } from '../../entities/truck.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
+import { Driver } from '../../entities/driver.entity';
 import {
   Load,
   LoadLocation,
@@ -34,6 +35,14 @@ import {
   PackagingType,
 } from '../../entities/load.entity';
 import { Payment, PaymentMethod, PaymentStatus, PaymentType } from '../../entities/payment.entity';
+import {
+  NotificationType,
+  NotificationCategory,
+  NotificationChannel,
+  NotificationPriority,
+  EntityType,
+} from '../../entities/notification.entity';
+import { NotificationService } from '../notifications/notification.service';
 import { CampaignGeoService } from '../campaigns/campaign-geo.service';
 import {
   BookCapacityDto,
@@ -50,6 +59,7 @@ import {
   PLATFORM_CAPACITY_COMMISSION_RATE,
   quoteCommission,
   quoteFreight,
+  resolveOfferedFreight,
   isLeftoverSellableSlice,
   remainingFromTrip,
   roundKg,
@@ -101,6 +111,29 @@ const LOAD_CARD_SELECT = [
   'load.destination',
   'load.locations',
 ];
+const ASSIGNABLE_LOAD_SELECT: (keyof Load)[] = [
+  'id',
+  'tenantId',
+  'cargoOwnerId',
+  'title',
+  'weight',
+  'volume',
+  'origin',
+  'destination',
+  'locations',
+  'status',
+  'pickupDate',
+  'deliveryDate',
+  'cargoType',
+  'assignedTruckId',
+  'metadata',
+  'createdAt',
+];
+const ASSIGNABLE_LOAD_STATUS = [
+  LoadStatus.DRAFT,
+  LoadStatus.CREATED,
+  LoadStatus.PUBLISHED,
+];
 
 @Injectable()
 export class CapacityService implements OnModuleInit {
@@ -112,6 +145,8 @@ export class CapacityService implements OnModuleInit {
     @InjectRepository(Truck) private readonly truckRepo: Repository<Truck>,
     @InjectRepository(Trip) private readonly tripRepo: Repository<Trip>,
     @InjectRepository(Load) private readonly loadRepo: Repository<Load>,
+    @InjectRepository(Driver) private readonly driverRepo: Repository<Driver>,
+    private readonly notifications: NotificationService,
     private readonly geo: CampaignGeoService,
     private readonly dataSource: DataSource,
   ) {}
@@ -145,7 +180,7 @@ export class CapacityService implements OnModuleInit {
           "compatibleCargoTypes" jsonb NOT NULL DEFAULT '["GENERAL"]',
           "generalCargoOnly" boolean NOT NULL DEFAULT true,
           "allowMixing" boolean NOT NULL DEFAULT true,
-          "bookingMode" character varying(16) NOT NULL DEFAULT 'INSTANT',
+          "bookingMode" character varying(16) NOT NULL DEFAULT 'REQUEST',
           "status" character varying(24) NOT NULL DEFAULT 'OPEN',
           "notes" text,
           "loadIds" jsonb NOT NULL DEFAULT '[]',
@@ -356,9 +391,6 @@ export class CapacityService implements OnModuleInit {
     }
 
     const floorPrice = roundMoney(dto.floorPrice ?? this.suggestFloor(listedWeightKg, trip));
-    if (floorPrice <= 0) {
-      throw new BadRequestException('Set a price for the remaining space');
-    }
 
     const offer = this.offerRepo.create({
       tenantId,
@@ -387,7 +419,7 @@ export class CapacityService implements OnModuleInit {
       compatibleCargoTypes: dto.compatibleCargoTypes?.length ? dto.compatibleCargoTypes : ['GENERAL'],
       generalCargoOnly: dto.generalCargoOnly !== false,
       allowMixing: dto.allowMixing !== false,
-      bookingMode: dto.bookingMode || CapacityBookingMode.INSTANT,
+      bookingMode: dto.bookingMode || CapacityBookingMode.REQUEST,
       status: CapacityOfferStatus.OPEN,
       notes: dto.notes || null,
       loadIds: [],
@@ -491,11 +523,41 @@ export class CapacityService implements OnModuleInit {
     };
     const reason = hardFilterOffer(this.toMatchInput(offer), search);
     if (reason) throw new BadRequestException(reason);
-    return this.quoteFromOffer(offer, dto.weightKg, dto.volumeM3 || 0);
+    return this.quoteFromOffer(offer, dto.weightKg, dto.volumeM3 || 0, dto.offeredPrice);
+  }
+
+  async assignableCargos(tenantId: string, cargoOwnerId: string) {
+    const loads = await this.loadRepo.find({
+      where: { tenantId, cargoOwnerId, status: In(ASSIGNABLE_LOAD_STATUS) },
+      select: ASSIGNABLE_LOAD_SELECT,
+      order: { pickupDate: 'DESC' },
+      take: 80,
+    });
+    const live = await this.bookingRepo.find({
+      where: { tenantId, cargoOwnerId, status: In(LIVE_BOOKING) },
+    });
+    const reserved = new Set(live.map((row) => row.loadId).filter(Boolean));
+    return loads
+      .filter((load) => !load.assignedTruckId && !reserved.has(load.id))
+      .map((load) => ({
+        id: load.id,
+        title: load.title,
+        weightKg: Number(load.weight) || 0,
+        volumeM3: Number(load.volume) || 0,
+        cargoType: load.cargoType || 'GENERAL',
+        status: load.status,
+        pickupDate: load.pickupDate,
+        deliveryDate: load.deliveryDate,
+        origin: this.placeFromLoad(load, 'origin'),
+        destination: this.placeFromLoad(load, 'destination'),
+        corridor: `${this.placeFromLoad(load, 'origin')?.name || 'Pickup'} → ${
+          this.placeFromLoad(load, 'destination')?.name || 'Delivery'
+        }`,
+      }));
   }
 
   async book(offerId: string, dto: BookCapacityDto, tenantId: string, cargoOwnerId: string) {
-    return this.dataSource.transaction(async (manager) => {
+    const presented = await this.dataSource.transaction(async (manager) => {
       const offer = await manager
         .createQueryBuilder(CapacityOffer, 'o')
         .setLock('pessimistic_write')
@@ -503,27 +565,49 @@ export class CapacityService implements OnModuleInit {
         .andWhere('o.tenantId = :tenantId', { tenantId })
         .getOne();
       if (!offer) throw new NotFoundException('Capacity listing not found');
+      if (offer.ownerId === cargoOwnerId) {
+        throw new BadRequestException('You cannot book leftover space on your own truck');
+      }
+      if (!dto.loadId) {
+        throw new BadRequestException('Assign a cargo to this leftover-space truck before booking');
+      }
 
-      const origin = dto.origin || offer.origin;
-      const destination = dto.destination || offer.destination;
+      const cargo = await manager.findOne(Load, {
+        where: { id: dto.loadId, tenantId, cargoOwnerId },
+        select: ASSIGNABLE_LOAD_SELECT,
+      });
+      if (!cargo) throw new NotFoundException('Cargo not found');
+      if (cargo.assignedTruckId && cargo.assignedTruckId !== offer.truckId) {
+        throw new BadRequestException('This cargo is already assigned to another truck');
+      }
+      const alreadyBooked = await manager.findOne(CapacityBooking, {
+        where: { tenantId, loadId: cargo.id, status: In(LIVE_BOOKING) },
+      });
+      if (alreadyBooked) {
+        throw new BadRequestException('This cargo is already booked on leftover space');
+      }
+
+      const previousStatus = cargo.status;
+      const origin = dto.origin || this.placeFromLoad(cargo, 'origin') || offer.origin;
+      const destination = dto.destination || this.placeFromLoad(cargo, 'destination') || offer.destination;
+      const weightKg = dto.weightKg || Number(cargo.weight) || 0;
+      const volumeM3 = dto.volumeM3 || Number(cargo.volume) || 0;
+      const pickupDate = new Date(dto.pickupDate || cargo.pickupDate || offer.departureAt);
+      const deliveryDate = new Date(dto.deliveryDate || cargo.deliveryDate || offer.arrivalAt);
       const search: SearchQuery = {
         origin,
         destination,
-        pickupAt: dto.pickupAt || dto.pickupDate || offer.departureAt,
-        weightKg: dto.weightKg,
-        volumeM3: dto.volumeM3 || 0,
-        cargoType: dto.cargoType || 'GENERAL',
+        pickupAt: dto.pickupAt || pickupDate || offer.departureAt,
+        weightKg,
+        volumeM3,
+        cargoType: dto.cargoType || cargo.cargoType || 'GENERAL',
         isHazardous: dto.isHazardous,
       };
       const reason = hardFilterOffer(this.toMatchInput(offer), search);
       if (reason) throw new BadRequestException(reason);
-      if (offer.ownerId === cargoOwnerId) {
-        throw new BadRequestException('You cannot book leftover space on your own truck');
-      }
+      if (weightKg <= 0) throw new BadRequestException('Cargo weight is required to book leftover space');
 
-      const priced = this.quoteFromOffer(offer, dto.weightKg, dto.volumeM3 || 0);
-      const instant = offer.bookingMode === CapacityBookingMode.INSTANT;
-      const status = instant ? CapacityBookingStatus.CONFIRMED : CapacityBookingStatus.REQUESTED;
+      const priced = this.quoteFromOffer(offer, weightKg, volumeM3, dto.offeredPrice);
 
       const reserved = applyBookingToSlice(
         {
@@ -532,8 +616,8 @@ export class CapacityService implements OnModuleInit {
           allocatedWeightKg: Number(offer.allocatedWeightKg),
           allocatedVolumeM3: Number(offer.allocatedVolumeM3),
         },
-        dto.weightKg,
-        dto.volumeM3 || 0,
+        weightKg,
+        volumeM3,
         'reserve',
       );
       offer.remainingWeightKg = reserved.remainingWeightKg;
@@ -547,37 +631,55 @@ export class CapacityService implements OnModuleInit {
       ) as CapacityOfferStatus;
       await manager.save(offer);
 
+      cargo.status = LoadStatus.PENDING_CONFIRMATION;
+      cargo.metadata = {
+        ...(cargo.metadata || {}),
+        capacityPendingOfferId: offer.id,
+        previousLoadStatus: previousStatus,
+      };
+      await manager
+        .createQueryBuilder()
+        .update(Load)
+        .set({ status: LoadStatus.PENDING_CONFIRMATION, metadata: cargo.metadata })
+        .where('id = :id', { id: cargo.id })
+        .execute();
+
       const booking = manager.create(CapacityBooking, {
         tenantId,
         offerId: offer.id,
         cargoOwnerId,
-        weightKg: roundKg(dto.weightKg),
-        volumeM3: roundKg(dto.volumeM3 || 0),
-        cargoType: (dto.cargoType || 'GENERAL').toUpperCase(),
-        title: dto.title || `Shared capacity ${offer.origin.name} → ${offer.destination.name}`,
+        loadId: cargo.id,
+        weightKg: roundKg(weightKg),
+        volumeM3: roundKg(volumeM3),
+        cargoType: (dto.cargoType || cargo.cargoType || 'GENERAL').toUpperCase(),
+        title: dto.title || cargo.title || `Shared capacity ${offer.origin.name} → ${offer.destination.name}`,
         freightAmount: priced.freightAmount,
         commissionRate: priced.commissionRate,
         commissionAmount: priced.commissionAmount,
         currencyCode: offer.currencyCode,
         commissionStatus: CapacityCommissionStatus.PENDING,
-        status,
+        status: CapacityBookingStatus.REQUESTED,
         origin,
         destination,
-        pickupDate: new Date(dto.pickupDate || offer.departureAt),
-        deliveryDate: new Date(dto.deliveryDate || offer.arrivalAt),
-        metadata: { bookingMode: offer.bookingMode, payer: 'CARGO_OWNER' },
+        pickupDate,
+        deliveryDate,
+        metadata: {
+          bookingMode: CapacityBookingMode.REQUEST,
+          payer: 'CARGO_OWNER',
+          offeredPrice: priced.freightAmount,
+          previousLoadStatus: previousStatus,
+        },
       });
       const saved = await manager.save(booking);
-
-      if (instant) {
-        await this.confirmInTx(manager, offer, saved, dto, tenantId, cargoOwnerId);
-      }
       return this.presentBooking(await manager.findOneByOrFail(CapacityBooking, { id: saved.id }), offer);
     });
+
+    await this.notifyTruckOwnerOfRequest(presented, tenantId);
+    return presented;
   }
 
   async acceptBooking(bookingId: string, tenantId: string, ownerId: string) {
-    return this.dataSource.transaction(async (manager) => {
+    const presented = await this.dataSource.transaction(async (manager) => {
       const booking = await manager.findOne(CapacityBooking, { where: { id: bookingId, tenantId } });
       if (!booking) throw new NotFoundException('Booking not found');
       const offer = await manager
@@ -593,15 +695,21 @@ export class CapacityService implements OnModuleInit {
       await this.confirmInTx(manager, offer, booking, {}, tenantId, booking.cargoOwnerId);
       return this.presentBooking(booking, offer);
     });
+
+    await this.notifyDriverOfConfirmedCargo(presented, tenantId);
+    await this.notifyCargoOwnerOfDecision(presented, tenantId, 'accepted');
+    return presented;
   }
 
   async rejectBooking(bookingId: string, tenantId: string, ownerId: string, reason?: string) {
-    return this.releaseBooking(bookingId, tenantId, {
+    const presented = await this.releaseBooking(bookingId, tenantId, {
       actorId: ownerId,
       asOwner: true,
       status: CapacityBookingStatus.REJECTED,
       reason,
     });
+    await this.notifyCargoOwnerOfDecision(presented, tenantId, 'rejected');
+    return presented;
   }
 
   async cancelBooking(bookingId: string, tenantId: string, cargoOwnerId: string, reason?: string) {
@@ -766,6 +874,31 @@ export class CapacityService implements OnModuleInit {
       if (existing.assignedTruckId && existing.assignedTruckId !== truck.id) {
         throw new BadRequestException('This cargo is already assigned to another truck');
       }
+      const origin = booking.origin || offer.origin;
+      const destination = booking.destination || offer.destination;
+      const pickup = booking.pickupDate || offer.departureAt;
+      const delivery = booking.deliveryDate || offer.arrivalAt;
+      existing.pickupDate = pickup;
+      existing.deliveryDate = delivery;
+      existing.offeredPrice = Number(booking.freightAmount);
+      existing.locations = [
+        this.locationPayload('PICKUP', 1, origin, pickup),
+        this.locationPayload('DELIVERY', 2, destination, delivery),
+      ];
+      existing.origin = {
+        address: origin.address || origin.name,
+        city: origin.city || origin.name,
+        country: origin.country || '',
+        lat: origin.lat,
+        lng: origin.lng,
+      };
+      existing.destination = {
+        address: destination.address || destination.name,
+        city: destination.city || destination.name,
+        country: destination.country || '',
+        lat: destination.lat,
+        lng: destination.lng,
+      };
       return existing;
     }
     if (booking.loadId) {
@@ -842,7 +975,13 @@ export class CapacityService implements OnModuleInit {
   ): Promise<Trip> {
     if (offer.tripId) {
       const existing = await manager.findOne(Trip, { where: { id: offer.tripId, tenantId } });
-      if (existing) return existing;
+      if (existing) {
+        if (!existing.driverId && truck.currentDriverId) {
+          existing.driverId = truck.currentDriverId;
+        }
+        this.attachExtraCargoStop(existing, offer, booking, load, truck);
+        return manager.save(existing);
+      }
     }
     const trip = manager.create(Trip, {
       tenantId,
@@ -903,6 +1042,9 @@ export class CapacityService implements OnModuleInit {
       booking.commissionStatus = CapacityCommissionStatus.CANCELLED;
       await manager.save(offer);
       await manager.save(booking);
+      if (booking.loadId) {
+        await this.restorePendingLoad(manager, booking);
+      }
       return this.presentBooking(booking, offer);
     });
   }
@@ -964,11 +1106,14 @@ export class CapacityService implements OnModuleInit {
     return o.includes(q) || q.includes(o);
   }
 
-  private quoteFromOffer(offer: CapacityOffer, weightKg: number, volumeM3: number) {
-    const freightAmount = quoteFreight(this.toMatchInput(offer), weightKg, volumeM3);
+  private quoteFromOffer(offer: CapacityOffer, weightKg: number, volumeM3: number, offeredPrice?: number) {
+    const suggestedFreight = quoteFreight(this.toMatchInput(offer), weightKg, volumeM3);
+    const freightAmount = resolveOfferedFreight(suggestedFreight, offeredPrice);
     const commission = quoteCommission(freightAmount, Number(offer.commissionRate));
     return {
       freightAmount,
+      suggestedFreight,
+      offeredPrice: offeredPrice != null ? roundMoney(Number(offeredPrice)) : null,
       commissionRate: commission.rate,
       commissionAmount: commission.amount,
       totalDue: roundMoney(freightAmount + commission.amount),
@@ -1045,18 +1190,24 @@ export class CapacityService implements OnModuleInit {
   }
 
   private presentBooking(booking: CapacityBooking, offer?: CapacityOffer) {
+    const pickup = this.formatPlaceName(booking.origin) || offer?.origin?.name;
+    const delivery = this.formatPlaceName(booking.destination) || offer?.destination?.name;
     return {
       ...booking,
       weightKg: Number(booking.weightKg),
       volumeM3: Number(booking.volumeM3),
       freightAmount: Number(booking.freightAmount),
+      offeredPrice: Number(booking.freightAmount),
       commissionAmount: Number(booking.commissionAmount),
       commissionRate: Number(booking.commissionRate),
       totalDue: roundMoney(Number(booking.freightAmount) + Number(booking.commissionAmount)),
       corridor: offer ? `${offer.origin?.name} → ${offer.destination?.name}` : null,
-      bookingMode: offer?.bookingMode,
+      pickupLabel: pickup || null,
+      deliveryLabel: delivery || null,
+      bookingMode: CapacityBookingMode.REQUEST,
       offerStatus: offer?.status,
       truckId: offer?.truckId,
+      ownerId: offer?.ownerId,
     };
   }
 
@@ -1194,6 +1345,208 @@ export class CapacityService implements OnModuleInit {
         coordinates: { latitude: place.lat, longitude: place.lng },
       },
     };
+  }
+
+  private formatPlaceName(place?: CapacityPlace | null) {
+    if (!place) return '';
+    return this.formatPlaceLabel({
+      name: place.name,
+      city: place.city,
+      country: place.country,
+      address: place.address,
+    });
+  }
+
+  private formatWhen(value?: Date | string | null) {
+    if (!value) return 'TBD';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'TBD';
+    return date.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+  }
+
+  private leftoverOrdinal(offer: CapacityOffer, loadId: string) {
+    const prior = (offer.loadIds || []).filter((id) => id !== loadId).length;
+    if (prior === 0) return 'second';
+    if (prior === 1) return 'third';
+    return `#${prior + 2}`;
+  }
+
+  private attachExtraCargoStop(
+    trip: Trip,
+    offer: CapacityOffer,
+    booking: CapacityBooking,
+    load: Load,
+    truck: Truck,
+  ) {
+    const pickup = this.formatPlaceName(booking.origin) || offer.origin?.name || 'Pickup';
+    const delivery = this.formatPlaceName(booking.destination) || offer.destination?.name || 'Delivery';
+    const ordinal = this.leftoverOrdinal(offer, load.id);
+    const line = `Leftover cargo (${ordinal}) on ${truck.plateNumber}: pickup ${pickup} at ${this.formatWhen(
+      booking.pickupDate,
+    )}; delivery ${delivery} at ${this.formatWhen(booking.deliveryDate)}.`;
+    trip.notes = [trip.notes, line].filter(Boolean).join('\n');
+  }
+
+  private async restorePendingLoad(manager: any, booking: CapacityBooking) {
+    const load = await manager.findOne(Load, { where: { id: booking.loadId } });
+    if (!load) return;
+    const previous =
+      booking.metadata?.previousLoadStatus ||
+      load.metadata?.previousLoadStatus ||
+      LoadStatus.PUBLISHED;
+    const metadata = { ...(load.metadata || {}) };
+    delete metadata.capacityPendingOfferId;
+    delete metadata.previousLoadStatus;
+    await manager
+      .createQueryBuilder()
+      .update(Load)
+      .set({
+        status: previous,
+        assignedTruckId: null,
+        metadata,
+      })
+      .where('id = :id', { id: load.id })
+      .execute();
+  }
+
+  private async notifySafe(
+    payload: {
+      tenantId: string;
+      recipientId?: string | null;
+      title: string;
+      message: string;
+      notificationType: NotificationType;
+      entityType: EntityType;
+      entityId?: string;
+      actionUrl: string;
+      actionText: string;
+    },
+  ) {
+    if (!payload.recipientId) return;
+    try {
+      await this.notifications.createNotification({
+        tenantId: payload.tenantId,
+        recipientId: payload.recipientId,
+        title: payload.title,
+        message: payload.message,
+        notificationType: payload.notificationType,
+        category: NotificationCategory.TRIP,
+        priority: NotificationPriority.HIGH,
+        channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+        entityType: payload.entityType,
+        entityId: payload.entityId,
+        requiresAction: true,
+        actionUrl: payload.actionUrl,
+        actionText: payload.actionText,
+      });
+    } catch (err: any) {
+      this.logger.warn(`Capacity notification failed: ${err?.message}`);
+    }
+  }
+
+  private async notifyTruckOwnerOfRequest(booking: any, tenantId: string) {
+    const pickup = booking.pickupLabel || this.formatPlaceName(booking.origin);
+    const delivery = booking.deliveryLabel || this.formatPlaceName(booking.destination);
+    await this.notifySafe({
+      tenantId,
+      recipientId: booking.ownerId,
+      title: 'Leftover space booking request',
+      message: `${booking.title || 'Cargo'} asked to use leftover space on your truck. Offered ${Number(
+        booking.freightAmount,
+      ).toFixed(2)} ${booking.currencyCode || ''}. Pickup ${pickup} at ${this.formatWhen(
+        booking.pickupDate,
+      )}; delivery ${delivery} at ${this.formatWhen(booking.deliveryDate)}. Confirm to ship.`,
+      notificationType: NotificationType.TRIP_CREATED,
+      entityType: EntityType.CARGO,
+      entityId: booking.id,
+      actionUrl: '/dashboard/fleet/capacity',
+      actionText: 'Review request',
+    });
+  }
+
+  private async notifyCargoOwnerOfDecision(booking: any, tenantId: string, decision: 'accepted' | 'rejected') {
+    const accepted = decision === 'accepted';
+    await this.notifySafe({
+      tenantId,
+      recipientId: booking.cargoOwnerId,
+      title: accepted ? 'Leftover space confirmed' : 'Leftover space request declined',
+      message: accepted
+        ? `The truck owner confirmed leftover space for ${booking.title || 'your cargo'}. The driver will pick up at ${
+            booking.pickupLabel || this.formatPlaceName(booking.origin)
+          } on ${this.formatWhen(booking.pickupDate)}.`
+        : `The truck owner declined leftover space for ${booking.title || 'your cargo'}${
+            booking.rejectionReason ? `: ${booking.rejectionReason}` : '.'
+          }`,
+      notificationType: accepted ? NotificationType.TRIP_CREATED : NotificationType.TRIP_CANCELLED,
+      entityType: EntityType.CARGO,
+      entityId: booking.id,
+      actionUrl: '/dashboard/available-space',
+      actionText: accepted ? 'View booking' : 'Find other space',
+    });
+  }
+
+  private async notifyDriverOfConfirmedCargo(booking: any, tenantId: string) {
+    const truck = booking.truckId ? await this.findTruck({ id: booking.truckId, tenantId }) : null;
+    const trip = booking.tripId
+      ? await this.tripRepo.findOne({ where: { id: booking.tripId, tenantId }, select: ['id', 'driverId', 'tripNumber'] })
+      : null;
+    const driverRecordId = trip?.driverId || truck?.currentDriverId;
+    if (!driverRecordId) {
+      await this.notifySafe({
+        tenantId,
+        recipientId: booking.ownerId,
+        title: 'Assign a driver for leftover cargo',
+        message: `You confirmed leftover cargo "${booking.title || 'cargo'}" on ${
+          truck?.plateNumber || 'this truck'
+        }, but no driver is assigned yet. Assign a driver so they get the pickup and delivery details.`,
+        notificationType: NotificationType.DRIVER_ASSIGNMENT,
+        entityType: EntityType.TRIP,
+        entityId: booking.tripId,
+        actionUrl: '/dashboard/fleet/capacity',
+        actionText: 'Assign driver',
+      });
+      return;
+    }
+
+    const driver = await this.driverRepo.findOne({
+      where: { id: driverRecordId },
+      select: ['id', 'userId', 'firstName', 'lastName'],
+    });
+    if (!driver?.userId) {
+      await this.notifySafe({
+        tenantId,
+        recipientId: booking.ownerId,
+        title: 'Assign a driver for leftover cargo',
+        message: `You confirmed leftover cargo "${booking.title || 'cargo'}" on ${
+          truck?.plateNumber || 'this truck'
+        }, but the assigned driver has no login. The driver cannot be notified of pickup and delivery.`,
+        notificationType: NotificationType.DRIVER_ASSIGNMENT,
+        entityType: EntityType.TRIP,
+        entityId: booking.tripId,
+        actionUrl: '/dashboard/fleet/capacity',
+        actionText: 'Assign driver',
+      });
+      return;
+    }
+    const offer = await this.offerRepo.findOne({ where: { id: booking.offerId, tenantId } });
+    const ordinal = offer ? this.leftoverOrdinal(offer, booking.loadId) : 'additional';
+    const pickup = booking.pickupLabel || this.formatPlaceName(booking.origin);
+    const delivery = booking.deliveryLabel || this.formatPlaceName(booking.destination);
+    await this.notifySafe({
+      tenantId,
+      recipientId: driver?.userId,
+      title: `Extra leftover cargo (${ordinal}) assigned`,
+      message: `You are in charge of shipping this leftover cargo on ${
+        truck?.plateNumber || 'your truck'
+      }: "${booking.title || 'Cargo'}". Pickup ${pickup} at ${this.formatWhen(
+        booking.pickupDate,
+      )}. Delivery ${delivery} at ${this.formatWhen(booking.deliveryDate)}.`,
+      notificationType: NotificationType.DRIVER_ASSIGNMENT,
+      entityType: EntityType.TRIP,
+      entityId: booking.tripId || booking.loadId,
+      actionUrl: `/dashboard/driver/cargo`,
+      actionText: 'View cargo',
+    });
   }
 
   private suggestFloor(remainingKg: number, trip?: Trip | null) {

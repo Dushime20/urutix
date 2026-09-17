@@ -12,6 +12,8 @@ export interface CapacityPlace {
 
 export interface CapacityQuote {
   freightAmount: number;
+  suggestedFreight?: number;
+  offeredPrice?: number | null;
   commissionRate: number;
   commissionAmount: number;
   totalDue: number;
@@ -70,6 +72,7 @@ export interface CapacityBooking {
   cargoType: string;
   title?: string;
   freightAmount: number;
+  offeredPrice?: number;
   commissionRate: number;
   commissionAmount: number;
   totalDue: number;
@@ -80,7 +83,25 @@ export interface CapacityBooking {
   bookingMode?: string;
   pickupDate?: string;
   deliveryDate?: string;
+  pickupLabel?: string | null;
+  deliveryLabel?: string | null;
+  origin?: CapacityPlace | null;
+  destination?: CapacityPlace | null;
   createdAt: string;
+}
+
+export interface AssignableCargo {
+  id: string;
+  title: string;
+  weightKg: number;
+  volumeM3: number;
+  cargoType: string;
+  status: string;
+  pickupDate?: string | null;
+  deliveryDate?: string | null;
+  origin?: CapacityPlace | null;
+  destination?: CapacityPlace | null;
+  corridor: string;
 }
 
 export interface SellableTruck {
@@ -113,7 +134,8 @@ export interface SellableTruck {
 export interface CreateOfferPayload {
   truckId: string;
   tripId: string;
-  floorPrice: number;
+  floorPrice?: number;
+  bookingMode?: 'INSTANT' | 'REQUEST';
 }
 
 const unwrap = <T>(payload: any): T => {
@@ -157,8 +179,26 @@ export const capacityApi = {
       const data = unwrap<CapacityOffer[]>(r.data);
       return Array.isArray(data) ? data : [];
     }),
-  quote: (offerId: string, payload: { weightKg: number; volumeM3?: number; cargoType?: string }) =>
-    api.post(`/capacity/offers/${offerId}/quote`, payload).then((r) => unwrap<CapacityQuote>(r.data)),
+  quote: (
+    offerId: string,
+    payload: {
+      weightKg: number;
+      volumeM3?: number;
+      cargoType?: string;
+      offeredPrice?: number;
+      origin?: CapacityPlace | null;
+      destination?: CapacityPlace | null;
+      pickupAt?: string;
+    },
+  ) =>
+    api
+      .post(`/capacity/offers/${offerId}/quote`, compactParams(payload))
+      .then((r) => unwrap<CapacityQuote>(r.data)),
+  assignableCargos: () =>
+    api.get('/capacity/assignable-cargos').then((r) => {
+      const data = unwrap<AssignableCargo[]>(r.data);
+      return Array.isArray(data) ? data : [];
+    }),
   book: (offerId: string, payload: Record<string, any>) =>
     api.post(`/capacity/offers/${offerId}/book`, payload).then((r) => unwrap<CapacityBooking>(r.data)),
   bookings: () =>
