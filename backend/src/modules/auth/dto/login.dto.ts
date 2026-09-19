@@ -93,5 +93,11 @@ export class LoginResponseDto {
     required: false,
   })
   @IsOptional()
-  availableRoles?: Array<{ role: string; tenantName?: string }>;
+  availableRoles?: Array<{
+    role: string;
+    tenantName?: string;
+    tenantId?: string;
+    firstName?: string;
+    lastName?: string;
+  }>;
 }

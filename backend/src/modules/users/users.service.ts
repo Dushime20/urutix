@@ -3,9 +3,10 @@ import {
   Logger,
   ConflictException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { User, UserRole, UserStatus } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { Tenant, TenantStatus } from '../../entities/tenant.entity';
@@ -116,32 +117,39 @@ export class UsersService {
       );
     }
 
-    // Check if user already exists in tenant
+    const normalizedEmail = createUserDto.email?.trim().toLowerCase();
+    if (!normalizedEmail) {
+      throw new BadRequestException('Email is required');
+    }
+
+    // Same email + same role in this tenant is a duplicate.
+    // A different role (e.g. DRIVER vs TENANT_ADMIN) is allowed — they get their own setup link.
     const existingUser = await this.userRepository.findOne({
       where: {
-        email: createUserDto.email,
+        email: ILike(normalizedEmail),
         tenantId: createUserDto.tenantId,
+        role: createUserDto.role,
       },
     });
 
     if (existingUser) {
       this.logger.warn(
-        `[CREATE USER] duplicate email=${createUserDto.email} tenant=${createUserDto.tenantId}`,
+        `[CREATE USER] duplicate email=${normalizedEmail} role=${createUserDto.role} tenant=${createUserDto.tenantId}`,
       );
       throw new ConflictException(
-        'User with this email already exists in this tenant',
+        `A ${String(createUserDto.role).replace(/_/g, ' ').toLowerCase()} with this email already exists in this company.`,
       );
     }
 
-    // Create user without password initially - they'll set it via email link
+    // Email comes from the form. Password is set later via the setup/reset link — never copied.
     const user = this.userRepository.create({
-      email: createUserDto.email,
-      passwordHash: null, // No password initially
+      email: normalizedEmail,
+      passwordHash: null,
       role: createUserDto.role,
-      status: UserStatus.PENDING_VERIFICATION, // User needs to set password first
+      status: UserStatus.PENDING_VERIFICATION,
       tenantId: createUserDto.tenantId,
-      emailVerifiedAt: null, // Will be set when they complete password setup
-      phone: createUserDto.phoneNumber,
+      emailVerifiedAt: null,
+      phone: createUserDto.phoneNumber || (createUserDto as any).phone,
       // Set brokerTenantId for brokers so they can be queried by tenant
       ...(createUserDto.role === UserRole.BROKER && {
         brokerTenantId: createUserDto.tenantId,

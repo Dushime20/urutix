@@ -171,7 +171,8 @@ export class EnhancedAuthController {
           type: 'object',
           properties: {
               role: { type: 'string', example: 'CARGO_OWNER' },
-              preAuthToken: { type: 'string' }
+              preAuthToken: { type: 'string' },
+              tenantId: { type: 'string', format: 'uuid' }
           }
       }
   })
@@ -180,7 +181,7 @@ export class EnhancedAuthController {
     type: LoginResponseDto,
   })
   async selectRole(
-    @Body() body: { role: string; preAuthToken: string },
+    @Body() body: { role: string; preAuthToken: string; tenantId?: string },
     @Req() req: Request,
   ): Promise<LoginResponseDto> {
     try {
@@ -191,6 +192,7 @@ export class EnhancedAuthController {
         body.preAuthToken,
         body.role,
         clientIp,
+        body.tenantId,
       );
 
       this.logger.log(`Role selection successful from IP: ${clientIp}`);

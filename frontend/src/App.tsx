@@ -23,6 +23,7 @@ import BrokerLayout from './components/Layout/BrokerLayout';
 import ParkingLayout from './components/Layout/ParkingLayout';
 
 import Auth from './pages/Auth';
+import RoleSelectionPage from './pages/RoleSelectionPage';
 import Home from './pages/Home';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -286,6 +287,7 @@ function App() {
                     <Route path="/parking-reservation" element={<ParkingReservationPage />} />
                     <Route path="/parking-reservation/lookup" element={<ParkingReservationLookupPage />} />
                     <Route path="/auth" element={<Auth />} />
+                    <Route path="/select-role" element={<RoleSelectionPage />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/setup-password" element={<DriverPasswordSetup />} />

@@ -81,7 +81,7 @@ export const authAPI = {
   register: (data: any) => api.post('/auth/register', data),
   getProfile: () => api.get('/auth/profile'),
   testAuth: () => api.get('/auth/profile'), // Simple auth test
-  selectRole: (data: { role: string; preAuthToken: string }) => 
+  selectRole: (data: { role: string; preAuthToken: string; tenantId?: string }) =>
     api.post('/auth/select-role', data),
   setupDriverPassword: (data: { token: string; password: string; confirmPassword: string }) =>
     api.post('/auth/driver/setup-password', data),

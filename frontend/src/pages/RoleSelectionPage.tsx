@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Package, Truck, User, Building2, ShieldCheck, FileText, ArrowRight } from 'lucide-react';
@@ -8,6 +8,35 @@ import logoUrutiXBackground from '../assets/logo-urutix.svg';
 import { TranslatedText } from '../components/translated-text';
 import toast from 'react-hot-toast';
 
+const ROLE_SELECTION_KEY = 'urutix_role_selection';
+
+type RoleOption = {
+    role: string;
+    tenantName?: string;
+    tenantId?: string;
+    firstName?: string;
+    lastName?: string;
+};
+
+type RoleSelectionState = {
+    availableRoles: RoleOption[];
+    preAuthToken: string;
+};
+
+const readStoredSelection = (): RoleSelectionState | null => {
+    try {
+        const raw = sessionStorage.getItem(ROLE_SELECTION_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed?.preAuthToken || !Array.isArray(parsed?.availableRoles)) {
+            return null;
+        }
+        return parsed;
+    } catch {
+        return null;
+    }
+};
+
 const RoleSelectionPage = () => {
     const { state } = useLocation();
     const navigate = useNavigate();
@@ -15,22 +44,47 @@ const RoleSelectionPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
-    const availableRoles = state?.availableRoles || [];
-    const preAuthToken = state?.preAuthToken;
+    const selection = useMemo<RoleSelectionState | null>(() => {
+        if (state?.preAuthToken && Array.isArray(state?.availableRoles) && state.availableRoles.length > 0) {
+            return {
+                availableRoles: state.availableRoles,
+                preAuthToken: state.preAuthToken,
+            };
+        }
+        return readStoredSelection();
+    }, [state]);
+
+    const availableRoles = selection?.availableRoles || [];
+    const preAuthToken = selection?.preAuthToken;
 
     useEffect(() => {
-        if (!preAuthToken || !availableRoles || availableRoles.length === 0) {
+        if (selection?.preAuthToken && selection.availableRoles.length > 0) {
+            sessionStorage.setItem(ROLE_SELECTION_KEY, JSON.stringify(selection));
+        }
+    }, [selection]);
+
+    useEffect(() => {
+        if (!preAuthToken || availableRoles.length === 0) {
             toast.error('Invalid session state. Please login again.');
+            sessionStorage.removeItem(ROLE_SELECTION_KEY);
             navigate('/auth');
         }
-    }, [preAuthToken, availableRoles, navigate]);
+    }, [preAuthToken, availableRoles.length, navigate]);
 
-    const handleRoleSelect = async (role: string) => {
-        setSelectedRole(role);
+    const clearSelectionSession = () => {
+        sessionStorage.removeItem(ROLE_SELECTION_KEY);
+    };
+
+    const handleRoleSelect = async (roleObj: RoleOption) => {
+        if (!preAuthToken) return;
+
+        const selectionKey = `${roleObj.role}:${roleObj.tenantId || ''}`;
+        setSelectedRole(selectionKey);
         setIsLoading(true);
         try {
-            const user = await selectRole(role, preAuthToken);
+            const user = await selectRole(roleObj.role, preAuthToken, roleObj.tenantId);
             if (user) {
+                clearSelectionSession();
                 // Role-based redirects (copied from Auth.tsx)
                 switch (user.role) {
                     case 'CARGO_OWNER':
@@ -173,14 +227,15 @@ const RoleSelectionPage = () => {
 
                     <div className="px-6 pb-6">
                         <div className="grid grid-cols-1 gap-4">
-                            {availableRoles.map((roleObj: any) => {
+                            {availableRoles.map((roleObj: RoleOption, index: number) => {
                                 const details = getRoleDetails(roleObj.role);
-                                const isSelected = selectedRole === roleObj.role;
+                                const selectionKey = `${roleObj.role}:${roleObj.tenantId || ''}`;
+                                const isSelected = selectedRole === selectionKey;
 
                                 return (
                                     <button
-                                        key={roleObj.role}
-                                        onClick={() => handleRoleSelect(roleObj.role)}
+                                        key={`${roleObj.role}-${roleObj.tenantId || roleObj.tenantName || index}`}
+                                        onClick={() => handleRoleSelect(roleObj)}
                                         disabled={isLoading}
                                         className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-200 group ${isSelected
                                             ? `${details.borderColor} ${details.bgColor} ring-2 ring-offset-2 ring-primary-500`
@@ -193,8 +248,11 @@ const RoleSelectionPage = () => {
                                             </div>
                                             <div className="text-left">
                                                 <h3 className={`font-semibold ${details.textColor}`}>
-                                                    <TranslatedText text={details.title} />
+                                                    {[roleObj.firstName, roleObj.lastName].filter(Boolean).join(' ') || details.title}
                                                 </h3>
+                                                <p className={`text-xs font-medium ${details.textColor} opacity-80`}>
+                                                    <TranslatedText text={details.title} />
+                                                </p>
                                                 <p className="text-xs text-gray-500">
                                                     {roleObj.tenantName}
                                                 </p>
@@ -218,7 +276,10 @@ const RoleSelectionPage = () => {
 
                         <div className="mt-6 text-center">
                             <button
-                                onClick={() => navigate('/auth')}
+                                onClick={() => {
+                                    clearSelectionSession();
+                                    navigate('/auth');
+                                }}
                                 className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
                             >
                                 <TranslatedText text="Cancel and sign out" />

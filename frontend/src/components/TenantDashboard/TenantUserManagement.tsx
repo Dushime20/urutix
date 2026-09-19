@@ -72,9 +72,15 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
     });
 
     const onboardMutation = useMutation({
-        mutationFn: (data: typeof onboardForm) => tenantApi.createTenantUser(scopedTenantId, data),
+        mutationFn: (data: typeof onboardForm) => tenantApi.createTenantUser(scopedTenantId, {
+            email: data.email.trim().toLowerCase(),
+            firstName: data.firstName,
+            lastName: data.lastName,
+            role: data.role,
+            phoneNumber: data.phone,
+        }),
         onSuccess: () => {
-            toast.success(tSync('Partner onboarded successfully'));
+            toast.success(tSync('Account created. A password setup link was sent to their email.'));
             queryClient.invalidateQueries({ queryKey: ['tenantUsers', scopedTenantId] });
             setIsOnboardModalOpen(false);
             setOnboardForm({ email: '', firstName: '', lastName: '', role: 'TRUCK_OWNER', phone: '' });

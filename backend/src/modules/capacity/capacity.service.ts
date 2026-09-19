@@ -766,12 +766,16 @@ export class CapacityService implements OnModuleInit {
       }
       booking.status = CapacityBookingStatus.CONFIRMED;
       await this.confirmInTx(manager, offer, booking, {}, tenantId, booking.cargoOwnerId);
-      return this.presentBooking(booking, offer);
+      const truck = await manager.findOne(Truck, {
+        where: { id: offer.truckId, tenantId },
+        select: TRUCK_CARD_SELECT,
+      });
+      return this.presentBooking(booking, offer, { truck });
     });
 
     try {
-      await this.notifyDriverOfConfirmedCargo(presented, tenantId);
       await this.notifyCargoOwnerOfDecision(presented, tenantId, 'accepted');
+      await this.notifyDriverOfConfirmedCargo(presented, tenantId);
     } catch (err: any) {
       this.logger.warn(`Capacity accept notifications failed: ${err?.message}`);
     }
@@ -1612,9 +1616,14 @@ export class CapacityService implements OnModuleInit {
       entityId?: string;
       actionUrl: string;
       actionText: string;
+      channels?: NotificationChannel[];
+      requiresAction?: boolean;
     },
   ) {
-    if (!payload.recipientId) return;
+    if (!payload.recipientId) {
+      this.logger.warn(`Capacity notification skipped (no recipient): ${payload.title}`);
+      return;
+    }
     try {
       await this.notifications.createNotification({
         tenantId: payload.tenantId,
@@ -1624,10 +1633,14 @@ export class CapacityService implements OnModuleInit {
         notificationType: payload.notificationType,
         category: NotificationCategory.TRIP,
         priority: NotificationPriority.HIGH,
-        channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+        channels: payload.channels || [
+          NotificationChannel.IN_APP,
+          NotificationChannel.PUSH,
+          NotificationChannel.EMAIL,
+        ],
         entityType: payload.entityType,
         entityId: payload.entityId,
-        requiresAction: true,
+        requiresAction: payload.requiresAction ?? false,
         actionUrl: payload.actionUrl,
         actionText: payload.actionText,
       });
@@ -1653,27 +1666,48 @@ export class CapacityService implements OnModuleInit {
       entityId: booking.id,
       actionUrl: '/dashboard/fleet/capacity',
       actionText: 'Review request',
+      requiresAction: true,
     });
   }
 
   private async notifyCargoOwnerOfDecision(booking: any, tenantId: string, decision: 'accepted' | 'rejected') {
     const accepted = decision === 'accepted';
+    const recipientId = booking.cargoOwnerId;
+    if (!recipientId) {
+      this.logger.warn(`Cannot notify cargo owner for booking ${booking.id}: missing cargoOwnerId`);
+      return;
+    }
+
+    const truck =
+      booking.truckPlate || !booking.truckId
+        ? null
+        : await this.findTruck({ id: booking.truckId, tenantId });
+    const plate = booking.truckPlate || truck?.plateNumber || 'the truck';
+    const pickup = booking.pickupLabel || this.formatPlaceName(booking.origin) || 'pickup';
+    const delivery = booking.deliveryLabel || this.formatPlaceName(booking.destination) || 'delivery';
+    const price = `${Number(booking.freightAmount || booking.offeredPrice || 0).toFixed(2)} ${
+      booking.currencyCode || ''
+    }`.trim();
+
     await this.notifySafe({
       tenantId,
-      recipientId: booking.cargoOwnerId,
-      title: accepted ? 'Leftover space confirmed' : 'Leftover space request declined',
+      recipientId,
+      title: accepted ? 'Shipping confirmed — leftover space accepted' : 'Leftover space request declined',
       message: accepted
-        ? `The truck owner confirmed leftover space for ${booking.title || 'your cargo'}. The driver will pick up at ${
-            booking.pickupLabel || this.formatPlaceName(booking.origin)
-          } on ${this.formatWhen(booking.pickupDate)}.`
-        : `The truck owner declined leftover space for ${booking.title || 'your cargo'}${
+        ? `Good news: the truck owner accepted your offered price (${price}) and will ship "${
+            booking.title || 'your cargo'
+          }" on ${plate}. Pickup at ${pickup} on ${this.formatWhen(
+            booking.pickupDate,
+          )}; delivery at ${delivery} on ${this.formatWhen(booking.deliveryDate)}.`
+        : `The truck owner declined leftover space for "${booking.title || 'your cargo'}"${
             booking.rejectionReason ? `: ${booking.rejectionReason}` : '.'
-          }`,
-      notificationType: accepted ? NotificationType.TRIP_CREATED : NotificationType.TRIP_CANCELLED,
+          } You can request another leftover listing.`,
+      notificationType: accepted ? NotificationType.SMART_MATCH_SELECTED : NotificationType.TRIP_CANCELLED,
       entityType: EntityType.CARGO,
-      entityId: booking.id,
+      entityId: booking.loadId || booking.id,
       actionUrl: '/dashboard/available-space',
-      actionText: accepted ? 'View booking' : 'Find other space',
+      actionText: accepted ? 'View confirmation' : 'Find other space',
+      requiresAction: !accepted,
     });
   }
 

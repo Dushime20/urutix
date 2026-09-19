@@ -394,6 +394,50 @@ export class EnhancedAuthService {
     }
   }
 
+  /**
+   * Same email + password can match multiple user rows.
+   * If a DRIVER exists and it is not clearly the same person as the other
+   * roles (tenant admin "John Doe" vs driver "Bruno Africa"), sign in as DRIVER
+   * so the email assigned to that driver goes to the driver dashboard.
+   * Same person (matching names) still gets role selection.
+   */
+  private resolveConflictingLoginUsers(validUsers: User[]): User | null {
+    const identityOf = (u: User) =>
+      `${(u.profile?.firstName || '').trim().toLowerCase()}|${(u.profile?.lastName || '').trim().toLowerCase()}`;
+
+    const driver = validUsers.find((u) => u.role === UserRole.DRIVER);
+    if (driver) {
+      const driverIdentity = identityOf(driver);
+      const others = validUsers.filter((u) => u.id !== driver.id);
+      const samePerson = others.length > 0 && others.every((u) => {
+        const key = identityOf(u);
+        return driverIdentity !== '|' && key !== '|' && key === driverIdentity;
+      });
+
+      if (!samePerson) {
+        this.logger.log(
+          `Email ${driver.email} is assigned to DRIVER ${driver.id}; skipping role selection`,
+        );
+        return driver;
+      }
+    }
+
+    const namedIdentities = new Set(
+      validUsers.map(identityOf).filter((key) => key !== '|'),
+    );
+    if (namedIdentities.size > 1) {
+      const newest = [...validUsers].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )[0];
+      this.logger.log(
+        `Email ${newest.email} matched distinct people; signing in as newest ${newest.role} ${newest.id}`,
+      );
+      return newest;
+    }
+
+    return null;
+  }
+
   async login(
     loginDto: LoginDto,
     clientIp?: string,
@@ -498,20 +542,31 @@ export class EnhancedAuthService {
         throw new UnauthorizedException('Invalid email or password');
       }
 
-      // If multiple valid users, determine if we need role selection
-      if (validUsers.length > 1) {       
+      const resolvedUser = validUsers.length > 1
+        ? this.resolveConflictingLoginUsers(validUsers)
+        : null;
+      const loginCandidates = resolvedUser ? [resolvedUser] : validUsers;
+
+      // If multiple valid users for the same person, determine if we need role selection
+      if (loginCandidates.length > 1) {       
          // Fetch tenant names for all valid users
          const availableRoles = [];
-         for (const u of validUsers) {
+         for (const u of loginCandidates) {
            let tName = 'Default Tenant';
            if (u.tenantId) {
              const t = await this.tenantRepository.findOne({ where: { id: u.tenantId } });
              if (t) tName = t.name;
            }
-           availableRoles.push({ role: u.role, tenantName: tName });
+           availableRoles.push({
+             role: u.role,
+             tenantName: tName,
+             tenantId: u.tenantId,
+             firstName: u.profile?.firstName || '',
+             lastName: u.profile?.lastName || '',
+           });
          }
          
-         const primaryUser = validUsers[0];
+         const primaryUser = loginCandidates[0];
          // We create a special "PRE_AUTH" token that is valid for 5 minutes
          const payload = { 
             username: primaryUser.email, 
@@ -539,7 +594,7 @@ export class EnhancedAuthService {
       }
 
       // Single user flow
-      const user = validUsers[0];
+      const user = loginCandidates[0];
 
       // Update last login details
       user.lastLoginAt = new Date();
@@ -605,7 +660,12 @@ export class EnhancedAuthService {
     }
   } 
   
-  async selectRole(preAuthToken: string, targetRole: string, clientIp?: string): Promise<LoginResponseDto> {
+  async selectRole(
+    preAuthToken: string,
+    targetRole: string,
+    clientIp?: string,
+    tenantId?: string,
+  ): Promise<LoginResponseDto> {
       // Verify the pre-auth token
       let payload;
       try {
@@ -624,9 +684,13 @@ export class EnhancedAuthService {
       // Strictly speaking, we should check if targetRole is in payload.availableRoles if we put it there.
       // But checking the DB is safer anyway.
 
-      // Find the user with this email and role
+      // Find the user with this email and role (and tenant when provided)
       const user = await this.userRepository.findOne({
-          where: { email: email, role: targetRole as UserRole },
+          where: {
+            email: email,
+            role: targetRole as UserRole,
+            ...(tenantId ? { tenantId } : {}),
+          },
           relations: ['profile']
       });
 
@@ -996,19 +1060,15 @@ export class EnhancedAuthService {
         throw new BadRequestException('Setup token has expired');
       }
 
-      // Find user
+      // Apply the new password to the DRIVER row only — never the tenant admin
+      // who may share the same email.
       const user = await this.userRepository.findOne({
-        where: { email: setupTokenRecord.email },
+        where: { email: ILike(setupTokenRecord.email), role: UserRole.DRIVER },
       });
 
       if (!user) {
-        throw new NotFoundException('User not found');
+        throw new NotFoundException('Driver account not found');
       }
-
-      // Verify user is a driver - REMOVED strict check to allow existing users (e.g. cargo owners) to become drivers
-      // if (user.role !== UserRole.DRIVER) {
-      //   throw new BadRequestException('This token is only valid for driver accounts');
-      // }
 
       // Update password and activate account
       const hashedPassword = await bcrypt.hash(password, 14);
@@ -1065,9 +1125,9 @@ export class EnhancedAuthService {
         throw new BadRequestException('Setup token has expired');
       }
 
-      // Find user
+      // Apply the new password to the TENANT_ADMIN row only.
       const user = await this.userRepository.findOne({
-        where: { email: setupTokenRecord.email },
+        where: { email: ILike(setupTokenRecord.email), role: UserRole.TENANT_ADMIN },
       });
 
       if (!user) {

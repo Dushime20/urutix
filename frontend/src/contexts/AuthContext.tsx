@@ -48,7 +48,7 @@ interface AuthContextType {
   logout: () => void;
   refreshAccessToken: () => Promise<boolean>;
   updateProfile: (profileData: Partial<User>) => Promise<boolean>;
-  selectRole: (role: string, preAuthToken: string) => Promise<User | null>;
+  selectRole: (role: string, preAuthToken: string, tenantId?: string) => Promise<User | null>;
   isLoading: boolean;
 }
 
@@ -404,12 +404,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const selectRole = async (role: string, preAuthToken: string): Promise<User | null> => {
+  const selectRole = async (role: string, preAuthToken: string, tenantId?: string): Promise<User | null> => {
     try {
       setIsLoading(true);
       setIsLoggingIn(true);
       
-      const response = await authAPI.selectRole({ role, preAuthToken });
+      const response = await authAPI.selectRole({ role, preAuthToken, tenantId });
       const { accessToken: newAccessToken, refreshToken: newRefreshToken, user: userData } = response.data;
       
       debugUserData(userData, 'selectRole');

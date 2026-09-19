@@ -792,30 +792,14 @@ export class FleetService {
         );
       }
 
-      // Step 2: Create the user account (even if email exists for other roles)
-      // This will now pass database constraints because we are creating a new role entry
-      this.logger.log(`Proceeding with driver creation (multi-role compatible)...`);
-      
-      // Check for any existing user with this email to reuse password
-      const existingUserWithEmail = await this.userRepository.findOne({
-        where: { email: createDriverDto.email.trim().toLowerCase() }
-      });
-      
-      // Generate temporary password (default backup)
-      const tempPassword = crypto.randomBytes(32).toString('hex');
-      const tempPasswordHash = await bcrypt.hash(tempPassword, 12);
-      
-      let passwordHashToUse = tempPasswordHash;
-      let userStatus = UserStatus.PENDING_VERIFICATION;
-      let shouldSendSetupEmail = true;
+      // Email is taken from the form. Password is never copied from another
+      // account (e.g. tenant admin) — the driver sets it via the setup/reset link.
+      this.logger.log(`Proceeding with driver creation (password will be set via email link)...`);
 
-      // If user exists and has a password, reuse it and activate account immediately
-      if (existingUserWithEmail && existingUserWithEmail.passwordHash) {
-         this.logger.log(`Found existing user account for ${createDriverDto.email}. Reusing credentials.`);
-         passwordHashToUse = existingUserWithEmail.passwordHash;
-         userStatus = UserStatus.ACTIVE; // Auto-activate since they have a password
-         shouldSendSetupEmail = false;
-      }
+      const tempPassword = crypto.randomBytes(32).toString('hex');
+      const passwordHashToUse = await bcrypt.hash(tempPassword, 12);
+      const userStatus = UserStatus.PENDING_VERIFICATION;
+      const shouldSendSetupEmail = true;
       
       // Create new user for driver
       this.logger.log(`👤 Creating new driver user account...`);

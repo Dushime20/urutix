@@ -109,24 +109,11 @@ export class BrokersService {
       throw new ConflictException('A broker with this email already exists in this tenant');
     }
 
-    // Check for existing user account to reuse credentials
-    const existingUserAccount = await this.userRepository.findOne({
-      where: { email: createBrokerDto.email.toLowerCase().trim() }
-    });
-
-    let passwordHash;
-    let userStatus = UserStatus.PENDING_VERIFICATION;
-    let shouldSendInvitation = true;
-
-    if (existingUserAccount && existingUserAccount.passwordHash) {
-       passwordHash = existingUserAccount.passwordHash;
-       userStatus = UserStatus.ACTIVE;
-       shouldSendInvitation = false;
-       this.logger.log(`Reusing existing credentials for broker ${createBrokerDto.email}`);
-    } else {
-       const tempPassword = crypto.randomBytes(16).toString('hex');
-       passwordHash = await bcrypt.hash(tempPassword, 10);
-    }
+    // Always send a setup/reset link. Do not copy another account's password.
+    const tempPassword = crypto.randomBytes(16).toString('hex');
+    const passwordHash = await bcrypt.hash(tempPassword, 10);
+    const userStatus = UserStatus.PENDING_VERIFICATION;
+    const shouldSendInvitation = true;
 
     // Get tenant settings for default commission rate
     const tenant = await this.tenantRepository.findOne({

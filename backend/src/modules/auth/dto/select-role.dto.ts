@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 import { UserRole } from '../../../entities/user.entity';
 
 export class SelectRoleDto {
@@ -19,4 +19,13 @@ export class SelectRoleDto {
   @IsNotEmpty()
   @IsString()
   preAuthToken: string;
+
+  @ApiProperty({
+    description: 'Optional tenant ID to disambiguate the same role across companies',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  tenantId?: string;
 }

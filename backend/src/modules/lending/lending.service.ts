@@ -508,24 +508,11 @@ export class LendingService {
     this.logger.log(`Lender entity created: ${savedLender.id} (tenant: ${tenantId})`);
 
     try {
-      // Reuse credentials if the email already has any user record
-      const anyExistingUser = await this.userRepository.findOne({
-        where: { email: createLenderDto.contact_email.trim().toLowerCase() },
-      });
-
-      let passwordHashToUse: string;
-      let userStatus = UserStatus.PENDING_VERIFICATION;
-      let shouldSendSetupEmail = true;
-
-      if (anyExistingUser?.passwordHash) {
-        passwordHashToUse  = anyExistingUser.passwordHash;
-        userStatus         = UserStatus.ACTIVE;
-        shouldSendSetupEmail = false;
-        this.logger.log(`Reusing existing credentials for ${createLenderDto.contact_email}`);
-      } else {
-        const tempPassword = crypto.randomBytes(32).toString('hex');
-        passwordHashToUse  = await bcrypt.hash(tempPassword, 12);
-      }
+      // Email comes from the form. Password is set via the setup/reset link.
+      const tempPassword = crypto.randomBytes(32).toString('hex');
+      const passwordHashToUse = await bcrypt.hash(tempPassword, 12);
+      const userStatus = UserStatus.PENDING_VERIFICATION;
+      const shouldSendSetupEmail = true;
 
       const lenderUser = this.userRepository.create({
         email: createLenderDto.contact_email.trim().toLowerCase(),
