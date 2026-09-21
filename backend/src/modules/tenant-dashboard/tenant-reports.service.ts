@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
 import { Load } from '../../entities/load.entity';
 import { Truck } from '../../entities/truck.entity';
 import { User } from '../../entities/user.entity';
@@ -117,6 +117,16 @@ function isFleetFamily(role: string): boolean {
 
 function denyAll<T>(qb: SelectQueryBuilder<T>): void {
   qb.andWhere('1 = 0');
+}
+
+/** Separate OR clauses so TypeORM quotes camelCase columns. A single "(a OR b)" string is sent to Postgres unquoted. */
+function orWhere<T>(qb: SelectQueryBuilder<T>, clauses: Array<{ sql: string; params?: Record<string, unknown> }>): void {
+  qb.andWhere(new Brackets((w) => {
+    clauses.forEach((clause, i) => {
+      if (i === 0) w.where(clause.sql, clause.params);
+      else w.orWhere(clause.sql, clause.params);
+    });
+  }));
 }
 
 function fmtDate(value?: Date | string | null): string {
@@ -279,10 +289,11 @@ export class TenantReportsService {
       .orderBy('d.createdAt', 'DESC')
       .take(MAX_ROWS);
     if (!isElevated(scope.role)) {
-      qb.andWhere(
-        '(d.complainantUserId = :uid OR d.respondentUserId = :uid OR d.senderId = :uid OR d.driverId = :uid)',
-        { uid: scope.userId },
-      );
+      orWhere(qb, [
+        { sql: 'd.complainantUserId = :uid', params: { uid: scope.userId } },
+        { sql: 'd.respondentUserId = :uid' },
+        { sql: 'd.driverId = :uid' },
+      ]);
     }
     if (query.status) qb.andWhere('d.status = :status', { status: query.status });
     if (query.priority) qb.andWhere('d.priority = :priority', { priority: query.priority });
@@ -486,16 +497,12 @@ export class TenantReportsService {
     if (status) qb.andWhere('p.status = :status', { status });
     if (isElevated(scope.role) || scope.role === 'PARKING_RESERVATION_MANAGER') {
       // facility / tenant-wide
-    } else if (scope.role === 'DRIVER') {
-      qb.andWhere('(p.driverEmail = :email OR p.createdByUserId = :uid)', {
-        email: scope.email || '',
-        uid: scope.userId,
-      });
     } else {
-      qb.andWhere('(p.email = :email OR p.createdByUserId = :uid)', {
-        email: scope.email || '',
-        uid: scope.userId,
-      });
+      orWhere(qb, [
+        { sql: 'p.email = :email', params: { email: scope.email || '', uid: scope.userId } },
+        { sql: 'p.driverEmail = :email' },
+        { sql: 'p.submittedByUserId = :uid' },
+      ]);
     }
     const items = await qb.getMany();
     return items.map((p) => ({
@@ -541,7 +548,10 @@ export class TenantReportsService {
       .take(MAX_ROWS);
     if (status) qb.andWhere('LOWER(CAST(inv.status AS TEXT)) = :status', { status: status.toLowerCase() });
     if (!isElevated(scope.role)) {
-      qb.andWhere('(inv.customerId = :uid OR inv.senderId = :uid)', { uid: scope.userId });
+      orWhere(qb, [
+        { sql: 'inv.customerId = :uid', params: { uid: scope.userId } },
+        { sql: 'inv.senderId = :uid' },
+      ]);
     }
     const invoices = await qb.getMany();
     return invoices.map((i) => ({
@@ -563,7 +573,10 @@ export class TenantReportsService {
       .take(MAX_ROWS);
     if (status) qb.andWhere('p.status = :status', { status: status.toLowerCase() });
     if (!isElevated(scope.role)) {
-      qb.andWhere('(p.payerId = :uid OR p.payeeId = :uid)', { uid: scope.userId });
+      orWhere(qb, [
+        { sql: 'p.payerId = :uid', params: { uid: scope.userId } },
+        { sql: 'p.payeeId = :uid' },
+      ]);
     }
     const payments = await qb.getMany();
     return payments.map((p) => ({
@@ -607,7 +620,10 @@ export class TenantReportsService {
       return;
     }
     if (scope.role === 'CARGO_OWNER' || isFleetFamily(scope.role)) {
-      qb.andWhere(`(${alias}.borrower_id = :uid OR ${alias}.created_by = :uid)`, { uid });
+      orWhere(qb, [
+        { sql: `${alias}.borrower_id = :uid`, params: { uid } },
+        { sql: `${alias}.created_by = :uid` },
+      ]);
       return;
     }
     denyAll(qb);
@@ -676,7 +692,10 @@ export class TenantReportsService {
     } else if (scope.role === 'BROKER' || scope.role === 'AGENT') {
       qb.andWhere('load.brokerId = :uid', { uid });
     } else if (scope.role === 'DRIVER') {
-      qb.andWhere('(insp.driverId = :uid OR driver.userId = :uid)', { uid });
+      orWhere(qb, [
+        { sql: 'insp.driverId = :uid', params: { uid } },
+        { sql: 'driver.userId = :uid' },
+      ]);
     } else if (isFleetFamily(scope.role)) {
       qb.andWhere('truck.ownerId = :uid', { uid });
     } else {
