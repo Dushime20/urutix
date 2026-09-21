@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
 import { Load } from '../../entities/load.entity';
@@ -165,6 +165,8 @@ function allowedCategories(role: string): TenantReportCategory[] {
 
 @Injectable()
 export class TenantReportsService {
+  private readonly logger = new Logger(TenantReportsService.name);
+
   constructor(
     @InjectRepository(Load) private readonly loadRepo: Repository<Load>,
     @InjectRepository(Truck) private readonly truckRepo: Repository<Truck>,
@@ -199,7 +201,8 @@ export class TenantReportsService {
     }
 
     let rows: Record<string, string | number>[] = [];
-    switch (category) {
+    try {
+      switch (category) {
       case 'issues':
       case 'support':
       case 'disputes': {
@@ -243,6 +246,10 @@ export class TenantReportsService {
       case 'inspections':
         rows = await this.inspectionRows(scopedTenantId, query.status, scope);
         break;
+      }
+    } catch (err: any) {
+      this.logger.error(`Report '${category}' failed for role=${scope.role}: ${err?.message}`, err?.stack);
+      throw err;
     }
 
     rows = rows.filter((row) => {
@@ -672,10 +679,16 @@ export class TenantReportsService {
   private async inspectionRows(tenantId: string, status: string | undefined, scope: ReportScope) {
     const qb = this.inspectionRepo
       .createQueryBuilder('insp')
-      .leftJoinAndSelect('insp.trip', 'trip')
-      .leftJoinAndSelect('trip.load', 'load')
-      .leftJoinAndSelect('trip.driver', 'driver')
-      .leftJoinAndSelect('trip.truck', 'truck')
+      .select([
+        'insp.id',
+        'insp.shipmentReference',
+        'insp.plateNumber',
+        'insp.containerNumber',
+        'insp.driverName',
+        'insp.status',
+        'insp.riskLevel',
+        'insp.createdAt',
+      ])
       .where('insp.tenantId = :tenantId', { tenantId })
       .orderBy('insp.createdAt', 'DESC')
       .take(MAX_ROWS);
@@ -686,18 +699,50 @@ export class TenantReportsService {
     } else if (scope.role === 'CUSTOMS_OFFICER') {
       qb.andWhere('insp.officerId = :uid', { uid });
     } else if (scope.role === 'CARGO_OWNER') {
-      qb.andWhere('load.cargoOwnerId = :uid', { uid });
+      qb.andWhere(
+        `EXISTS (
+          SELECT 1 FROM trips trip
+          INNER JOIN loads load ON load.id = trip."loadId"
+          WHERE trip.id = insp."tripId" AND load."cargoOwnerId" = :uid
+        )`,
+        { uid },
+      );
     } else if (scope.role === 'CARGO_RECEIVER') {
-      qb.andWhere('load.receiverId = :uid', { uid });
+      qb.andWhere(
+        `EXISTS (
+          SELECT 1 FROM trips trip
+          INNER JOIN loads load ON load.id = trip."loadId"
+          WHERE trip.id = insp."tripId" AND load."receiverId" = :uid
+        )`,
+        { uid },
+      );
     } else if (scope.role === 'BROKER' || scope.role === 'AGENT') {
-      qb.andWhere('load.brokerId = :uid', { uid });
+      qb.andWhere(
+        `EXISTS (
+          SELECT 1 FROM trips trip
+          INNER JOIN loads load ON load.id = trip."loadId"
+          WHERE trip.id = insp."tripId" AND load."brokerId" = :uid
+        )`,
+        { uid },
+      );
     } else if (scope.role === 'DRIVER') {
-      orWhere(qb, [
-        { sql: 'insp.driverId = :uid', params: { uid } },
-        { sql: 'driver.userId = :uid' },
-      ]);
+      qb.andWhere(
+        `(insp."driverId" = :uid OR EXISTS (
+          SELECT 1 FROM trips trip
+          INNER JOIN drivers d ON d.id = trip."driverId"
+          WHERE trip.id = insp."tripId" AND d."userId" = :uid
+        ))`,
+        { uid },
+      );
     } else if (isFleetFamily(scope.role)) {
-      qb.andWhere('truck.ownerId = :uid', { uid });
+      qb.andWhere(
+        `EXISTS (
+          SELECT 1 FROM trips trip
+          INNER JOIN trucks truck ON truck.id = trip."truckId"
+          WHERE trip.id = insp."tripId" AND truck."ownerId" = :uid
+        )`,
+        { uid },
+      );
     } else {
       denyAll(qb);
     }
