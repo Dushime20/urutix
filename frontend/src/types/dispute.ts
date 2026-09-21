@@ -191,6 +191,48 @@ export interface DisputeAnalytics {
 
 // ─── Label helpers ──────────────────────────────────────────────────────────────
 
+export type TicketKind = 'issue' | 'support' | 'dispute';
+
+export const TICKET_KIND_LABELS: Record<TicketKind, string> = {
+  issue: 'Issues',
+  support: 'Support',
+  dispute: 'Disputes',
+};
+
+export const TICKET_KIND_DESCRIPTIONS: Record<TicketKind, string> = {
+  issue: 'Operational problems such as delays, damage, billing, and breakdowns',
+  support: 'Help requests, technical problems, account, and feature requests',
+  dispute: 'Complaints, contract conflicts, fraud, and insurance claims',
+};
+
+export const SUPPORT_CATEGORIES: DisputeCategory[] = [
+  'TECHNICAL_PROBLEM',
+  'FEATURE_REQUEST',
+  'IDENTITY_VERIFICATION',
+  'ACCOUNT_SUSPENSION',
+  'SECURITY_CONCERN',
+  'OTHER',
+];
+
+export const DISPUTE_CATEGORIES: DisputeCategory[] = [
+  'CONTRACT_VIOLATION',
+  'DRIVER_MISCONDUCT',
+  'FRAUD_SUSPECTED',
+  'BROKER_COMPLAINT',
+  'LENDER_COMPLAINT',
+  'INSURANCE_CLAIM',
+];
+
+export function getTicketKind(category: DisputeCategory): TicketKind {
+  if (DISPUTE_CATEGORIES.includes(category)) return 'dispute';
+  if (SUPPORT_CATEGORIES.includes(category)) return 'support';
+  return 'issue';
+}
+
+export function isTicketKind(value: string | null | undefined): value is TicketKind {
+  return value === 'issue' || value === 'support' || value === 'dispute';
+}
+
 export const CATEGORY_LABELS: Record<DisputeCategory, string> = {
   PAYMENT_ISSUE:        'Payment Issue',
   DELIVERY_DELAY:       'Late Delivery',

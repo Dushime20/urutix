@@ -148,6 +148,7 @@ const BrandingSettingsPage = lazy(() => import('./pages/tenant-admin/BrandingSet
 const BillingDashboard = lazy(() => import('./pages/subscription/BillingDashboard'));
 const PurchaseCredits = lazy(() => import('./pages/subscription/PurchaseCredits'));
 const TenantDashboardPage = lazy(() => import('./pages/TenantDashboard'));
+const TenantReportGeneration = lazy(() => import('./pages/tenant-admin/TenantReportGeneration'));
 const PartnerBillingManager = lazy(() => import('./pages/tenant-admin/PartnerBillingManager'));
 const TenantAdminRoutes = lazy(() => import('./components/TenantAdmin/TenantAdminRoutes'));
 
@@ -680,7 +681,7 @@ function App() {
                       <Route path="partner-billing" element={<PartnerBillingManager />} />
                        <Route path="communication" element={<TenantDashboardPage defaultView="communicate" />} />
                       <Route path="analytics" element={<TenantDashboardPage />} />
-                      <Route path="reports" element={<TenantDashboardPage defaultView="reports" />} />
+                      <Route path="reports" element={<TenantReportGeneration />} />
                       <Route path="profile" element={<TenantDashboardPage defaultView="profile" />} />
                       <Route path="settings" element={<TenantDashboardPage defaultView="settings" />} />
                       <Route path="compliance" element={<ComplianceDashboard />} />

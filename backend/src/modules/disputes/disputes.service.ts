@@ -33,6 +33,7 @@ import {
   AssignDisputeDto,
   EscalateDisputeDto,
 } from './dto/dispute.dto';
+import { categoriesForKind } from './ticket-kind';
 
 // ─── SLA definitions (minutes) ───────────────────────────────────────────────
 const SLA_CONFIG: Record<DisputePriority, { firstResponse: number; resolution: number }> = {
@@ -201,7 +202,7 @@ export class DisputesService {
     user: User,
   ): Promise<{ disputes: DisputeV2[]; total: number; page: number; limit: number }> {
     const page  = Math.max(1, filter.page ?? 1);
-    const limit = Math.min(100, filter.limit ?? 20);
+    const limit = Math.min(500, filter.limit ?? 20);
     const skip  = (page - 1) * limit;
 
     const qb = this.disputeRepo
@@ -225,6 +226,10 @@ export class DisputesService {
 
     if (filter.status)           qb.andWhere('d.status = :status', { status: filter.status });
     if (filter.category)         qb.andWhere('d.category = :category', { category: filter.category });
+    if (filter.kind) {
+      const kindCats = categoriesForKind(filter.kind);
+      if (kindCats.length) qb.andWhere('d.category IN (:...kindCats)', { kindCats });
+    }
     if (filter.priority)         qb.andWhere('d.priority = :priority', { priority: filter.priority });
     if (filter.assignedToUserId) qb.andWhere('d.assignedToUserId = :auid', { auid: filter.assignedToUserId });
     if (filter.fromDate)         qb.andWhere('d.createdAt >= :from', { from: new Date(filter.fromDate) });

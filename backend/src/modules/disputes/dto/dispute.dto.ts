@@ -10,6 +10,7 @@ import {
   IsDateString,
   Min,
   Max,
+  IsIn,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
@@ -242,6 +243,11 @@ export class DisputeFilterDto {
   @IsEnum(DisputeCategory)
   category?: DisputeCategory;
 
+  @ApiPropertyOptional({ enum: ['issue', 'support', 'dispute'], description: 'Ticket kind grouping' })
+  @IsOptional()
+  @IsIn(['issue', 'support', 'dispute'])
+  kind?: 'issue' | 'support' | 'dispute';
+
   @ApiPropertyOptional({ enum: DisputePriority })
   @IsOptional()
   @IsEnum(DisputePriority)
@@ -279,7 +285,7 @@ export class DisputeFilterDto {
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  @Max(100)
+  @Max(500)
   limit?: number;
 
   @ApiPropertyOptional()

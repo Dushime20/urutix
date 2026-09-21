@@ -16,7 +16,7 @@ import {
   FileCheck,
   Menu,
   X,
-  AlertTriangle,
+  FileSpreadsheet,
   Building2,
 } from 'lucide-react';
 import { TranslatedText } from '../translated-text';
@@ -70,7 +70,7 @@ const groupedTabs = [
     items: [
       { id: 'trips', label: 'Monitor Trips', icon: Navigation, description: 'Real-time shipment tracking' },
       { id: 'fleet', label: 'Fleet Systems', icon: Truck, description: 'Internal asset management' },
-      { id: 'reports', label: 'Reports & Disputes', icon: AlertTriangle, description: 'Issues & disputes raised by users' },
+      { id: 'reports', label: 'Generate Reports', icon: FileSpreadsheet, description: 'Export fleet, trips, cargo, issues, and more' },
       { id: 'users', label: 'Internal Staff', icon: Users, description: 'Access control & permissions' },
       { id: 'communicate', label: 'Partner Comms', icon: Mail, description: 'Send bulk emails to partners' },
     ],

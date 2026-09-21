@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Param, Query, UseGuards, Res, Request } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, UseGuards, Res, Request, BadRequestException } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiOkResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import * as express from 'express';
 import {
@@ -13,16 +14,21 @@ import {
   TenantTrends,
   TenantActivity,
 } from './tenant-dashboard.service';
+import { TenantReportsService, TenantReportCategory } from './tenant-reports.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../auth/guards/tenant.guard';
+import { RolesGuard, Roles } from '../auth/guards/roles.guard';
+import { UserRole } from '../../entities/user.entity';
 import { ApiResponseDto } from '../../common/dto/api-response.dto';
 
 @ApiTags('Tenant Dashboard')
+@ApiBearerAuth('JWT-auth')
 @Controller('tenant-dashboard')
-@UseGuards(JwtAuthGuard, TenantGuard)
+@UseGuards(JwtAuthGuard, TenantGuard, RolesGuard)
 export class TenantDashboardController {
   constructor(
     private readonly tenantDashboardService: TenantDashboardService,
+    private readonly tenantReportsService: TenantReportsService,
   ) { }
 
   @Get(':tenantId/metrics')
@@ -124,15 +130,91 @@ export class TenantDashboardController {
     };
   }
 
+  @Get(':tenantId/reports')
+  @Roles(UserRole.TENANT_ADMIN, UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Generate a tenant report preview (JSON rows)' })
+  @ApiParam({ name: 'tenantId', description: 'Tenant ID' })
+  @ApiQuery({ name: 'category', required: true, description: 'issues, support, disputes, fleet, drivers, trips, cargo, parking, users, invoices, payments, credits' })
+  @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'priority', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'dateFrom', required: false })
+  @ApiQuery({ name: 'dateTo', required: false })
+  async getTenantReport(
+    @Param('tenantId') tenantId: string,
+    @Query('category') category: TenantReportCategory,
+    @Query('status') status?: string,
+    @Query('priority') priority?: string,
+    @Query('search') search?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    if (!category) {
+      throw new BadRequestException('category is required');
+    }
+    const data = await this.tenantReportsService.generate(tenantId, {
+      category,
+      status,
+      priority,
+      search,
+      dateFrom,
+      dateTo,
+    });
+    return {
+      success: true,
+      statusCode: 200,
+      message: `${data.title} report generated`,
+      data,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get(':tenantId/reports/export')
+  @Roles(UserRole.TENANT_ADMIN, UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Download a tenant report as CSV' })
+  async exportTenantReport(
+    @Res() res: express.Response,
+    @Param('tenantId') tenantId: string,
+    @Query('category') category: TenantReportCategory,
+    @Query('status') status?: string,
+    @Query('priority') priority?: string,
+    @Query('search') search?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ): Promise<void> {
+    const report = await this.tenantReportsService.generate(tenantId, {
+      category,
+      status,
+      priority,
+      search,
+      dateFrom,
+      dateTo,
+    });
+    const csv = this.tenantReportsService.toCsv(report);
+    const stamp = new Date().toISOString().split('T')[0];
+    const filename = `${report.title.toLowerCase().replace(/\s+/g, '-')}-${stamp}.csv`;
+    res.set({
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+    res.send(csv);
+  }
+
   @Get(':tenantId/export')
+  @Roles(UserRole.TENANT_ADMIN, UserRole.SUPER_ADMIN, UserRole.ADMIN)
   @ApiOperation({
     summary: 'Export tenant data',
-    description: 'Export tenant data in various formats (CSV, Excel, PDF)',
+    description: 'Export tenant data as CSV for a selected category',
   })
   @ApiParam({ name: 'tenantId', description: 'Tenant ID' })
   @ApiQuery({
     name: 'format',
-    description: 'Export format (csv, excel, pdf)',
+    description: 'Export format (csv)',
+    required: false,
+  })
+  @ApiQuery({
+    name: 'category',
+    description: 'Report category',
     required: false,
   })
   @ApiQuery({
@@ -145,26 +227,28 @@ export class TenantDashboardController {
   })
   async exportTenantData(
     @Param('tenantId') tenantId: string,
-    @Query('format') format: string = 'csv',
-    @Query('timeRange') timeRange: string = '7d',
+    @Query('format') _format: string = 'csv',
+    @Query('timeRange') timeRange: string = '30d',
+    @Query('category') category: TenantReportCategory = 'trips',
     @Res() res: express.Response,
   ): Promise<void> {
-    const options = { timeRange, dataType: 'dashboard' };
-    const blob = await this.tenantDashboardService.exportTenantData(
-      tenantId,
-      format,
-      options,
-    );
-
-    const filename = `tenant-dashboard-${format}-${new Date().toISOString().split('T')[0]}.${format}`;
+    const end = new Date();
+    const days = timeRange === '90d' ? 90 : timeRange === '7d' ? 7 : 30;
+    const start = new Date(end.getTime() - days * 24 * 60 * 60 * 1000);
+    const report = await this.tenantReportsService.generate(tenantId, {
+      category,
+      dateFrom: start.toISOString().slice(0, 10),
+      dateTo: end.toISOString().slice(0, 10),
+    });
+    const csv = this.tenantReportsService.toCsv(report);
+    const filename = `tenant-report-${category}-${new Date().toISOString().split('T')[0]}.csv`;
 
     res.set({
-      'Content-Type': 'text/csv',
+      'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': `attachment; filename="${filename}"`,
-      'Content-Length': blob.size.toString(),
     });
 
-    res.send(blob);
+    res.send(csv);
   }
 
   @Get(':tenantId/summary')

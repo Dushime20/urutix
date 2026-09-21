@@ -291,11 +291,23 @@ export const tenantApi = {
     endDate?: string;
     dataType?: string;
   } = {}): Promise<Blob> => {
-    const response = await api.get(`/tenants/${tenantId}/export`, {
-      params: { format, ...filters },
-      responseType: 'blob'
+    const response = await api.get(`/tenant-dashboard/${tenantId}/export`, {
+      params: { format, category: filters.dataType, ...filters },
+      responseType: 'blob',
     });
     return response.data;
+  },
+
+  getTenantReport: async (tenantId: string, params: {
+    category: string;
+    status?: string;
+    priority?: string;
+    search?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }): Promise<{ title: string; category: string; headers: string[]; rows: Record<string, string | number>[]; total: number }> => {
+    const response = await api.get(`/tenant-dashboard/${tenantId}/reports`, { params });
+    return response.data.data;
   },
 
   // KYC Management

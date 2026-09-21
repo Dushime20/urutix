@@ -51,7 +51,7 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 
 const Auth = () => {
   const { tSync } = useTranslation();
-  const { login, register: authRegister } = useAuth();
+  const { login, register: authRegister, selectRole } = useAuth();
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -153,6 +153,43 @@ const Auth = () => {
   }, [passwordValue]);
 
 
+  const redirectByRole = (role?: string) => {
+    switch (role) {
+      case 'CARGO_OWNER':
+      case 'CARGO_RECEIVER':
+        navigate('/dashboard');
+        break;
+      case 'TRUCK_OWNER':
+        navigate('/dashboard/fleet');
+        break;
+      case 'DRIVER':
+        navigate('/dashboard/driver');
+        break;
+      case 'ADMIN':
+      case 'SUPER_ADMIN':
+        navigate('/dashboard/admin');
+        break;
+      case 'TENANT_ADMIN':
+        navigate('/tenant-admin');
+        break;
+      case 'LENDER':
+        navigate('/lender');
+        break;
+      case 'BROKER':
+        navigate('/dashboard/broker');
+        break;
+      case 'CUSTOMS_OFFICER':
+        navigate('/dashboard/customs');
+        break;
+      case 'PARKING_RESERVATION_MANAGER':
+        navigate('/dashboard/parking/reservations');
+        break;
+      default:
+        navigate('/dashboard');
+        break;
+    }
+  };
+
   const onLoginSubmit = async (values: any) => {
     try {
       setError(null);
@@ -163,8 +200,22 @@ const Auth = () => {
       if (response) {
         console.log("✅ Login response:", response);
 
-        // Check for role selection requirement
+        // Backend may still return TENANT_ADMIN + DRIVER for this email.
+        // The email is assigned to the driver — complete that login here.
         if (response.requiresRoleSelection) {
+          const roles = response.availableRoles || [];
+          const driverRole = roles.find((r: any) => (r?.role || r) === 'DRIVER');
+          if (driverRole && response.preAuthToken) {
+            const user = await selectRole(
+              'DRIVER',
+              response.preAuthToken,
+              driverRole.tenantId,
+            );
+            if (user) {
+              redirectByRole(user.role);
+              return;
+            }
+          }
           navigate('/select-role', {
             state: {
               availableRoles: response.availableRoles,
@@ -174,46 +225,8 @@ const Auth = () => {
           return;
         }
 
-        // Standard flow - response contains user or is user
         const user = response.user || response;
-
-        // Role-based redirects
-        switch (user.role) {
-          case 'CARGO_OWNER':
-            navigate('/dashboard'); // Redirect to main dashboard with analytics
-            break;
-          case 'CARGO_RECEIVER':
-            navigate('/dashboard'); // Redirect to cargo owner dashboard with receiver view
-            break;
-          case 'TRUCK_OWNER':
-            navigate('/dashboard/fleet');
-            break;
-          case 'DRIVER':
-            navigate('/dashboard/driver');
-            break;
-          case 'ADMIN':
-          case 'SUPER_ADMIN':
-            navigate('/dashboard/admin');
-            break;
-          case 'TENANT_ADMIN':
-            navigate('/tenant-admin');
-            break;
-          case 'LENDER':
-            navigate('/lender');
-            break;
-          case 'BROKER':
-            navigate('/dashboard/broker');
-            break;
-          case 'CUSTOMS_OFFICER':
-            navigate('/dashboard/customs');
-            break;
-          case 'PARKING_RESERVATION_MANAGER':
-            navigate('/dashboard/parking/reservations');
-            break;
-          default:
-            navigate('/dashboard');
-            break;
-        }
+        redirectByRole(user.role);
       }
     } catch (error: any) {
       console.error('❌ Login error:', error);

@@ -20,16 +20,24 @@ import { EmailTemplate } from '../../entities/email-template.entity';
 import { BulkEmailLog } from '../../entities/bulk-email-log.entity';
 import { AIEmailAssistantService } from '../../services/ai-email-assistant.service';
 import { Tenant } from '../../entities/tenant.entity';
+import { Driver } from '../../entities/driver.entity';
+import { ParkingReservation } from '../../entities/parking-reservation.entity';
+import { Invoice } from '../financial/entities/invoice.entity';
+import { DisputeV2 } from '../../entities/dispute-v2.entity';
+import { TenantReportsService } from './tenant-reports.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Load, Truck, User, Trip, Payment, Bid, CreditAccount, CreditTransaction, EmailTemplate, BulkEmailLog, Tenant]),
+    TypeOrmModule.forFeature([
+      Load, Truck, User, Trip, Payment, Bid, CreditAccount, CreditTransaction,
+      EmailTemplate, BulkEmailLog, Tenant, Driver, ParkingReservation, Invoice, DisputeV2,
+    ]),
     EnhancedAuthModule,
     SubscriptionModule,
     NotificationsModule,
   ],
   controllers: [TenantDashboardController, PartnerBillingController, TenantBulkEmailController],
-  providers: [TenantDashboardService, BulkEmailService, AIEmailAssistantService],
-  exports: [TenantDashboardService],
+  providers: [TenantDashboardService, TenantReportsService, BulkEmailService, AIEmailAssistantService],
+  exports: [TenantDashboardService, TenantReportsService],
 })
 export class TenantDashboardModule { }

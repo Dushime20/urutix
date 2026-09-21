@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { LogOut, User, Menu, X, ChevronDown, Package, BarChart3, CreditCard, Settings, HelpCircle, Truck, Users, Route, DollarSign, Home, Wallet, Activity, Zap, Landmark, AlertTriangle, Clock, FileText, Shield, TrendingUp, ClipboardList, ShoppingCart, MessageSquare, Radio, Headphones, Warehouse } from 'lucide-react';
+import { LogOut, User, Menu, X, ChevronDown, Package, BarChart3, CreditCard, Settings, HelpCircle, Truck, Users, Route, DollarSign, Home, Wallet, Activity, Zap, Landmark, AlertTriangle, Clock, FileText, Shield, TrendingUp, ClipboardList, ShoppingCart, MessageSquare, Radio, Headphones, Warehouse, Scale, FileSpreadsheet } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigationPermissions } from '../../hooks/useNavigationPermissions';
 import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
@@ -404,7 +404,10 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           path: '/tenant-admin/support',
           icon: Headphones,
           subItems: [
-            { label: 'All Reports', path: '/tenant-admin/support' },
+            { label: 'Issues', path: '/tenant-admin/support?kind=issue', icon: AlertTriangle },
+            { label: 'Support', path: '/tenant-admin/support?kind=support', icon: Headphones },
+            { label: 'Disputes', path: '/tenant-admin/support?kind=dispute', icon: Scale },
+            { label: 'Generate Reports', path: '/tenant-admin/reports', icon: FileSpreadsheet },
           ]
         },
       ];
@@ -498,6 +501,21 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
       setShowMobileMenu(false);
       setShowUserMenu(false);
     }, 10);
+  };
+
+  const isSubItemActive = (candidate: string) => {
+    const [rawPath, rawQuery] = candidate.split('?');
+    if (location.pathname !== rawPath) return false;
+    const wanted = new URLSearchParams(rawQuery || '');
+    const current = new URLSearchParams(location.search);
+    if (rawPath === '/tenant-admin/support') {
+      const currentKind = current.get('kind') || 'issue';
+      return (wanted.get('kind') || 'issue') === currentKind;
+    }
+    for (const [key, value] of wanted.entries()) {
+      if (current.get(key) !== value) return false;
+    }
+    return true;
   };
 
   const getActiveNavItem = () => {
@@ -657,18 +675,23 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                             )}
                           </div>
                           <div className="py-2 px-1">
-                            {item.subItems?.map(subItem => (
+                            {item.subItems?.map(subItem => {
+                              const subActive = isSubItemActive(subItem.path);
+                              return (
+                              <div key={`${subItem.label}-${subItem.path}`}>
+                              {subItem.label === 'Generate Reports' && (
+                                <div className="my-1 mx-3 border-t border-slate-100 dark:border-slate-800" />
+                              )}
                               <Link
-                                key={subItem.path}
                                 to={subItem.path}
                                 onClick={(e) => { e.preventDefault(); handleNavClick(subItem.path); }}
-                                className={`w-full text-left px-4 py-2 md:py-3 text-[11px] xl:text-xs transition-all flex items-center gap-3 group/sub rounded-xl ${location.pathname === subItem.path
+                                className={`w-full text-left px-4 py-2 md:py-3 text-[11px] xl:text-xs transition-all flex items-center gap-3 group/sub rounded-xl ${subActive
                                   ? 'bg-primary-50/50 dark:bg-primary-900/20 text-primary-500 dark:text-primary-400 font-bold shadow-sm'
                                   : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary-500 dark:hover:text-primary-400'}`}
                               >
                                 {subItem.icon && (
                                   <div className={`p-1 rounded-lg transition-colors ${
-                                    location.pathname === subItem.path
+                                    subActive
                                       ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-600'
                                       : 'bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover/sub:bg-primary-50 dark:group-hover/sub:bg-primary-900/30 group-hover/sub:text-primary-500'
                                   }`}>
@@ -678,11 +701,13 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                                 <span className="tracking-wide uppercase font-black opacity-80 group-hover/sub:opacity-100 transition-opacity">
                                   <TranslatedText text={subItem.label} />
                                 </span>
-                                {location.pathname === subItem.path && (
+                                {subActive && (
                                   <div className="ml-auto w-1 h-3 bg-primary-500 rounded-full" />
                                 )}
                               </Link>
-                            ))}
+                              </div>
+                            );
+                            })}
                           </div>
                         </div>
                       )}
@@ -887,17 +912,19 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                               style={{ overflow: "hidden" }} className="bg-slate-50/50 dark:bg-slate-800/30 rounded-xl mx-2 my-1 border-l-2 border-slate-200 dark:border-slate-700"
                             >
                                 <div className="py-2 px-1 space-y-1">
-                                  {item.subItems?.map((sub, sIdx) => (
-                                    <Link key={sub.path} to={sub.path} onClick={() => setTimeout(() => setShowMobileMenu(false), 80)}
+                                  {item.subItems?.map((sub) => {
+                                    const subActive = isSubItemActive(sub.path);
+                                    return (
+                                    <Link key={`${sub.label}-${sub.path}`} to={sub.path} onClick={() => setTimeout(() => setShowMobileMenu(false), 80)}
                                       className={`w-full group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                                        location.pathname === sub.path
+                                        subActive
                                           ? 'bg-white dark:bg-slate-800 shadow-sm text-[#345E85] dark:text-blue-400'
                                           : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50'
                                       }`}
                                     >
                                       {sub.icon && (
                                         <div className={`p-1.5 rounded-lg transition-colors ${
-                                          location.pathname === sub.path
+                                          subActive
                                             ? 'bg-blue-50 dark:bg-blue-900/30 text-[#345E85] dark:text-blue-400'
                                             : 'bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:text-slate-600'
                                         }`}>
@@ -905,15 +932,16 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                                         </div>
                                       )}
                                       <span className={`text-[10px] font-black uppercase tracking-widest ${
-                                        location.pathname === sub.path ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'
+                                        subActive ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'
                                       }`}>
                                         <TranslatedText text={sub.label} />
                                       </span>
-                                      {location.pathname === sub.path && (
+                                      {subActive && (
                                         <div className="ml-auto w-1 h-3 bg-[#345E85] rounded-full" />
                                       )}
                                     </Link>
-                                  ))}
+                                  );
+                                  })}
                                 </div>
                             </motion.div>
                           )}

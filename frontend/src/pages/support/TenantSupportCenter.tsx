@@ -4,16 +4,18 @@ import { useSearchParams } from 'react-router-dom';
 import {
   Headphones, AlertTriangle, Search, Download, Eye, Clock,
   CheckCircle, XCircle, Flag, RefreshCw, Plus, BarChart3,
-  ChevronDown, Users, Timer, Activity,
+  ChevronDown, Users, Timer, Activity, Scale,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { disputesAPI } from '../../services/api';
 import {
-  type Dispute,
+  type Dispute, type DisputeCategory,
   STATUS_LABELS, CATEGORY_LABELS, PRIORITY_LABELS,
+  TICKET_KIND_LABELS, TICKET_KIND_DESCRIPTIONS,
   getPriorityColor, getPriorityDot,
   getUserDisplayName, formatRelativeTime, getSlaStatus,
-  asDisputeList,
+  asDisputeList, getTicketKind, isTicketKind,
+  SUPPORT_CATEGORIES, DISPUTE_CATEGORIES,
 } from '../../types/dispute';
 import SupportTicketDetailModal from './SupportTicketDetailModal';
 import CreateTicketModal from './CreateTicketModal';
@@ -23,7 +25,7 @@ import { StandardDataTable, StatusBadge, type Column, type TableAction } from '.
 
 // ── Status tab config ─────────────────────────────────────────────────────────
 const STATUS_TABS = [
-  { key: '',                    label: 'All Reports',      icon: Activity },
+  { key: '',                    label: 'All',              icon: Activity },
   { key: 'OPEN',                label: 'Open',             icon: Flag },
   { key: 'UNDER_REVIEW',        label: 'In Progress',      icon: Eye },
   { key: 'ASSIGNED',            label: 'Assigned',         icon: Users },
@@ -50,6 +52,9 @@ const SlaBadge: React.FC<{ dispute: Dispute }> = ({ dispute }) => {
 // ── Main Component ────────────────────────────────────────────────────────────
 const TenantSupportCenter: React.FC = () => {
   const qc = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const kindParam = searchParams.get('kind');
+  const ticketKind = isTicketKind(kindParam) ? kindParam : 'issue';
   const [activeTab, setActiveTab]     = useState('');
   const [search, setSearch]           = useState('');
   const [categoryFilter, setCategory] = useState('');
@@ -58,19 +63,38 @@ const TenantSupportCenter: React.FC = () => {
   const [showCreate, setShowCreate]   = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
 
+  useEffect(() => {
+    setCategory('');
+    setActiveTab('');
+  }, [ticketKind]);
+
   const { data: listData, isLoading, refetch } = useQuery({
-    queryKey: ['support-admin', activeTab, categoryFilter, priorityFilter, search],
+    queryKey: ['support-admin', ticketKind, activeTab, categoryFilter, priorityFilter, search],
     queryFn: () => disputesAPI.getAll({
       status: activeTab || undefined,
       category: categoryFilter || undefined,
       priority: priorityFilter || undefined,
       search: search || undefined,
-      limit: 100,
+      kind: ticketKind,
+      limit: 200,
     }).then(r => r.data),
     staleTime: 30_000,
   });
 
-  const disputes: Dispute[] = asDisputeList(listData);
+  const allTickets: Dispute[] = asDisputeList(listData);
+  const disputes: Dispute[] = useMemo(
+    () => allTickets.filter((d) => getTicketKind(d.category) === ticketKind),
+    [allTickets, ticketKind],
+  );
+  const kindCategories = useMemo((): DisputeCategory[] => {
+    if (ticketKind === 'support') return SUPPORT_CATEGORIES;
+    if (ticketKind === 'dispute') return DISPUTE_CATEGORIES;
+    return (Object.keys(CATEGORY_LABELS) as DisputeCategory[]).filter(
+      (k) => !SUPPORT_CATEGORIES.includes(k) && !DISPUTE_CATEGORIES.includes(k),
+    );
+  }, [ticketKind]);
+  const kindNoun = ticketKind === 'support' ? 'tickets' : ticketKind === 'dispute' ? 'disputes' : 'issues';
+  const KindIcon = ticketKind === 'dispute' ? Scale : ticketKind === 'support' ? Headphones : AlertTriangle;
 
   const handleExport = useCallback(() => {
     const headers = ['Ticket#', 'Title', 'Category', 'Priority', 'Status', 'Reporter', 'Assigned To', 'SLA', 'Created'];
@@ -88,10 +112,10 @@ const TenantSupportCenter: React.FC = () => {
     const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
     const a = Object.assign(document.createElement('a'), {
       href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })),
-      download: `support-tickets-${Date.now()}.csv`,
+      download: `${ticketKind}s-${Date.now()}.csv`,
     });
     a.click();
-  }, [disputes]);
+  }, [disputes, ticketKind]);
 
   const checkSlaMut = useMutation({
     mutationFn: () => disputesAPI.checkSla(),
@@ -193,14 +217,14 @@ const TenantSupportCenter: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <div className="w-8 h-8 bg-[#2c5173]/10 rounded-xl flex items-center justify-center">
-              <Headphones className="w-4 h-4 text-[#2c5173]" />
+              <KindIcon className="w-4 h-4 text-[#2c5173]" />
             </div>
             <h1 className="text-xl font-black text-gray-900 dark:text-white">
-              <TranslatedText text="Support Center" />
+              <TranslatedText text={TICKET_KIND_LABELS[ticketKind]} />
             </h1>
           </div>
           <p className="text-xs text-gray-500 dark:text-slate-400 ml-10">
-            <TranslatedText text="Manage and resolve all tenant support requests" />
+            <TranslatedText text={TICKET_KIND_DESCRIPTIONS[ticketKind]} />
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -256,7 +280,7 @@ const TenantSupportCenter: React.FC = () => {
               className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl text-xs focus:ring-2 focus:ring-[#2c5173] dark:text-slate-200" />
           </div>
           {[
-            { label: 'All Categories', value: categoryFilter, setter: setCategory, options: Object.entries(CATEGORY_LABELS) },
+            { label: 'All Categories', value: categoryFilter, setter: setCategory, options: kindCategories.map((k) => [k, CATEGORY_LABELS[k]] as [string, string]) },
             { label: 'All Priorities', value: priorityFilter, setter: setPriority, options: Object.entries(PRIORITY_LABELS) },
           ].map(({ label, value, setter, options }) => (
             <div key={label} className="relative">
@@ -268,7 +292,7 @@ const TenantSupportCenter: React.FC = () => {
               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 pointer-events-none" />
             </div>
           ))}
-          <span className="px-3 py-2 bg-slate-100 dark:bg-slate-700 text-[#2c5173] dark:text-slate-300 rounded-xl text-xs font-bold self-center">{disputes.length} tickets</span>
+          <span className="px-3 py-2 bg-slate-100 dark:bg-slate-700 text-[#2c5173] dark:text-slate-300 rounded-xl text-xs font-bold self-center">{disputes.length} {kindNoun}</span>
         </div>
       </div>
 
@@ -277,7 +301,7 @@ const TenantSupportCenter: React.FC = () => {
         {isLoading ? (
           <div className="p-12 text-center">
             <div className="w-8 h-8 border-2 border-[#2c5173] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-xs text-gray-400">Loading tickets...</p>
+            <p className="text-xs text-gray-400">Loading {kindNoun}...</p>
           </div>
         ) : (
           <StandardDataTable<Dispute>
@@ -290,8 +314,8 @@ const TenantSupportCenter: React.FC = () => {
             stickyHeader
             columnVisibility
             pagination
-            emptyMessage="No support tickets found"
-            ariaLabel="Support tickets"
+            emptyMessage={`No ${kindNoun} found`}
+            ariaLabel={TICKET_KIND_LABELS[ticketKind]}
           />
         )}
       </div>

@@ -54,7 +54,7 @@ import Profile from '../../pages/Profile';
 import TenantLenderManagementPage from '../../pages/TenantLenderManagementPage';
 import TenantCommunication from '../../pages/tenant/TenantCommunication';
 import { EnhancedKycVerificationCenter as KycManagementPage } from '../UserKYC';
-import TenantSupportCenter from '../../pages/support/TenantSupportCenter';
+import TenantReportGeneration from '../../pages/tenant-admin/TenantReportGeneration';
 import { tenantApi } from '../../services/tenantApi';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/Dialog';
 import { TripTracker } from '../TripTracker/TripTracker';
@@ -610,7 +610,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
 
           {!isLoading && selectedView === 'reports' && (
             <motion.div key="reports" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <TenantSupportCenter />
+              <TenantReportGeneration />
             </motion.div>
           )}
         </AnimatePresence>

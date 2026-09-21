@@ -106,7 +106,7 @@ const RefSelect: React.FC<RefSelectProps> = ({ label, value, onChange, options, 
             — None —
           </button>
           {options.length === 0 && !loading && (
-            <div className="px-3 py-2 text-xs text-gray-400 text-center">No records found</div>
+            <div className="px-3 py-2 text-xs text-gray-400 text-center">No matching items</div>
           )}
           {options.map(o => (
             <button key={o.id} type="button" onClick={() => { onChange(o.id); setOpen(false); }}
@@ -459,7 +459,7 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">
                 Related References{' '}
                 <span className="font-normal normal-case tracking-normal text-gray-400">
-                  (optional — select from your {isLender ? 'loans' : isCargoOwner ? 'cargos' : 'records'})
+                  (optional — select from your {isLender ? 'loans' : isCargoOwner ? 'cargos' : 'trips, invoices, or payments'})
                 </span>
               </p>
               <div className={`grid ${refGridClass} gap-2`}>
