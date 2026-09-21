@@ -141,6 +141,7 @@ export class TenantDashboardController {
   @ApiQuery({ name: 'dateFrom', required: false })
   @ApiQuery({ name: 'dateTo', required: false })
   async getTenantReport(
+    @Request() req: { user?: { userId?: string; id?: string; role?: string; tenantId?: string; email?: string } },
     @Param('tenantId') tenantId: string,
     @Query('category') category: TenantReportCategory,
     @Query('status') status?: string,
@@ -159,6 +160,11 @@ export class TenantDashboardController {
       search,
       dateFrom,
       dateTo,
+    }, {
+      userId: req.user?.userId || req.user?.id || '',
+      role: req.user?.role || '',
+      tenantId: req.user?.tenantId || tenantId,
+      email: req.user?.email,
     });
     return {
       success: true,
@@ -174,6 +180,7 @@ export class TenantDashboardController {
   @ApiOperation({ summary: 'Download a tenant report as CSV' })
   async exportTenantReport(
     @Res() res: express.Response,
+    @Request() req: { user?: { userId?: string; id?: string; role?: string; tenantId?: string; email?: string } },
     @Param('tenantId') tenantId: string,
     @Query('category') category: TenantReportCategory,
     @Query('status') status?: string,
@@ -189,6 +196,11 @@ export class TenantDashboardController {
       search,
       dateFrom,
       dateTo,
+    }, {
+      userId: req.user?.userId || req.user?.id || '',
+      role: req.user?.role || '',
+      tenantId: req.user?.tenantId || tenantId,
+      email: req.user?.email,
     });
     const csv = this.tenantReportsService.toCsv(report);
     const stamp = new Date().toISOString().split('T')[0];
@@ -226,6 +238,7 @@ export class TenantDashboardController {
     description: 'Data exported successfully',
   })
   async exportTenantData(
+    @Request() req: { user?: { userId?: string; id?: string; role?: string; tenantId?: string; email?: string } },
     @Param('tenantId') tenantId: string,
     @Query('format') _format: string = 'csv',
     @Query('timeRange') timeRange: string = '30d',
@@ -239,6 +252,11 @@ export class TenantDashboardController {
       category,
       dateFrom: start.toISOString().slice(0, 10),
       dateTo: end.toISOString().slice(0, 10),
+    }, {
+      userId: req.user?.userId || req.user?.id || '',
+      role: req.user?.role || '',
+      tenantId: req.user?.tenantId || tenantId,
+      email: req.user?.email,
     });
     const csv = this.tenantReportsService.toCsv(report);
     const filename = `tenant-report-${category}-${new Date().toISOString().split('T')[0]}.csv`;

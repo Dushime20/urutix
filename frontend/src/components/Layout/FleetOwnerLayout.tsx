@@ -31,9 +31,12 @@ const FleetOwnerLayout: React.FC = () => {
   useEffect(() => {
     if (user?.role !== 'TRUCK_OWNER') return;
 
-    const isBlocked = truckOwnerBlockedPaths.some(
-      (path) => location.pathname === path || location.pathname.startsWith(`${path}/`)
-    );
+    const isBlocked = truckOwnerBlockedPaths.some((path) => {
+      if (path === '/dashboard/fleet/reports') {
+        return location.pathname === path;
+      }
+      return location.pathname === path || location.pathname.startsWith(`${path}/`);
+    });
 
     if (isBlocked) {
       navigate('/dashboard/fleet', { replace: true });

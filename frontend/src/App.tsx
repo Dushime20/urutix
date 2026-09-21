@@ -93,7 +93,6 @@ const OperationalAdminBidding = lazy(() => import('./pages/admin-operational/Bid
 const OperationalAdminMonitoring = lazy(() => import('./pages/admin-operational/Monitoring'));
 const OperationalAdminAnalytics = lazy(() => import('./pages/admin-operational/Analytics'));
 const OperationalAdminFinancial = lazy(() => import('./pages/admin-operational/Financial'));
-const OperationalAdminReports = lazy(() => import('./pages/admin-operational/Reports'));
 const OperationalAdminActivityLogs = lazy(() => import('./pages/admin-operational/ActivityLogs'));
 const OperationalAdminProfile = lazy(() => import('./pages/admin-operational/Profile'));
 const OperationalAdminSettings = lazy(() => import('./pages/admin-operational/Settings'));
@@ -149,6 +148,7 @@ const BillingDashboard = lazy(() => import('./pages/subscription/BillingDashboar
 const PurchaseCredits = lazy(() => import('./pages/subscription/PurchaseCredits'));
 const TenantDashboardPage = lazy(() => import('./pages/TenantDashboard'));
 const TenantReportGeneration = lazy(() => import('./pages/tenant-admin/TenantReportGeneration'));
+const RoleReportGeneration = lazy(() => import('./pages/reports/RoleReportGeneration'));
 const PartnerBillingManager = lazy(() => import('./pages/tenant-admin/PartnerBillingManager'));
 const TenantAdminRoutes = lazy(() => import('./components/TenantAdmin/TenantAdminRoutes'));
 
@@ -330,6 +330,7 @@ function App() {
                       <Route path="analytics/predictive" element={<PredictiveLogistics />} />
                       <Route path="analytics/financial" element={<UnifiedFinancialManagement />} />
                       <Route path="reports/builder" element={<CustomReportBuilder />} />
+                      <Route path="reports/generate" element={<RoleReportGeneration />} />
                       <Route path="reports" element={<UnifiedAnalyticsManagement />} />
                       <Route path="history" element={<UnifiedAnalyticsManagement />} />
                       <Route path="tracking" element={<LiveTracking />} />
@@ -400,6 +401,7 @@ function App() {
                       <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
                       <Route path="analytics" element={<UnifiedAnalyticsManagement />} />
                       <Route path="reports/builder" element={<CustomReportBuilder />} />
+                      <Route path="reports/generate" element={<RoleReportGeneration />} />
                       <Route path="reports" element={<UnifiedAnalyticsManagement />} />
                       <Route path="history" element={<UnifiedAnalyticsManagement />} />
                       <Route path="tracking" element={<LiveTracking />} />
@@ -456,6 +458,7 @@ function App() {
                       <Route path="drivers" element={<FleetDashboard />} />
                       <Route path="epod-reports" element={<TruckOwnerEpodDashboard />} />
                       <Route path="analytics" element={<FleetAnalytics />} />
+                      <Route path="reports/generate" element={<RoleReportGeneration />} />
                       <Route path="reports" element={<FleetAnalytics />} />
                       <Route path="safety" element={<FleetSafety />} />
                       <Route path="financial" element={<FleetDashboard />} />
@@ -541,6 +544,7 @@ function App() {
                       <Route path="parking-reservations" element={<DriverDashboard />} />
                       <Route path="parking-reservations/:id" element={<DriverDashboard />} />
                       <Route path="support" element={<DriverHelpSupport />} />
+                      <Route path="reports" element={<RoleReportGeneration />} />
                       <Route path="ratings" element={<UnifiedReputationManagement />} />
                       <Route path="rewards" element={<UnifiedReputationManagement />} />
                       <Route path="scoring" element={<UnifiedReputationManagement />} />
@@ -586,6 +590,7 @@ function App() {
                       <Route path="system-settings" element={<SystemSettings />} />
                       <Route path="component-showcase" element={<ComponentShowcase />} />
                       <Route path="bulk-email" element={<BulkEmail />} />
+                      <Route path="reports/generate" element={<RoleReportGeneration />} />
                       <Route path="reports" element={<Analytics />} />
                       <Route path="help" element={<Settings />} />
                       <Route path="profile" element={<AdminAccountHub />} />
@@ -613,7 +618,7 @@ function App() {
                       <Route path="monitoring" element={<OperationalAdminMonitoring />} />
                       <Route path="notifications" element={<NotificationsPage />} />
                       <Route path="activity-logs" element={<OperationalAdminActivityLogs />} />
-                      <Route path="reports" element={<OperationalAdminReports />} />
+                      <Route path="reports" element={<RoleReportGeneration />} />
                       <Route path="profile" element={<OperationalAdminProfile />} />
                       <Route path="settings" element={<OperationalAdminSettings />} />
                       <Route path="compliance" element={<ComplianceDashboard />} />
@@ -651,6 +656,7 @@ function App() {
                       <Route path="advanced-settings" element={<AdvancedSettings />} />
                       <Route path="component-showcase" element={<ComponentShowcase />} />
                       <Route path="bulk-email" element={<BulkEmail />} />
+                      <Route path="reports/generate" element={<RoleReportGeneration />} />
                       <Route path="reports" element={<Analytics />} />
                       <Route path="help" element={<Settings />} />
                       <Route path="profile" element={<Profile />} />
@@ -709,6 +715,7 @@ function App() {
                       <Route path="analytics" element={<PortfolioAnalyticsPage />} />
                       <Route path="risk" element={<RiskAnalysisPage />} />
                       <Route path="interest" element={<InterestTrackingPage />} />
+                      <Route path="reports/generate" element={<RoleReportGeneration />} />
                       <Route path="reports" element={<FinancialReportsPage />} />
                       <Route path="borrowers" element={<BorrowersManagementPage />} />
                       <Route path="policies" element={<LendingPoliciesPage />} />
@@ -761,6 +768,7 @@ function App() {
                       <Route path="multi-stop" element={<MultiStopManagement />} />
                       <Route path="performance" element={<PerformanceAnalytics />} />
                       <Route path="payouts" element={<PayoutsPage />} />
+                      <Route path="reports" element={<RoleReportGeneration />} />
                       <Route path="support" element={<UserSupportPage />} />
                       <Route path="support/new" element={<UserSupportPage />} />
                     </Route>
@@ -771,6 +779,7 @@ function App() {
                       <Route path="reservations" element={<ParkingReservationsDashboard />} />
                       <Route path="reservations/:id" element={<ParkingReservationsDashboard />} />
                       <Route path="fees" element={<ParkingFeeSettings />} />
+                      <Route path="reports" element={<RoleReportGeneration />} />
                     </Route>
 
                     {/* Customs Officer Routes */}
@@ -785,6 +794,7 @@ function App() {
                       <Route path="checkpoints" element={<CheckpointsPage />} />
                       <Route path="analytics" element={<CustomsAnalyticsPage />} />
                       <Route path="audit" element={<CustomsAuditPage />} />
+                      <Route path="reports/generate" element={<RoleReportGeneration />} />
                       <Route path="reports" element={<CustomsAuditPage />} />
                       <Route path="profile" element={<CustomsOfficerProfilePage />} />
                       <Route path="settings" element={<CustomsOfficerProfilePage />} />

@@ -24,19 +24,24 @@ import { Driver } from '../../entities/driver.entity';
 import { ParkingReservation } from '../../entities/parking-reservation.entity';
 import { Invoice } from '../financial/entities/invoice.entity';
 import { DisputeV2 } from '../../entities/dispute-v2.entity';
+import { LoanRequest } from '../../entities/loan-request.entity';
+import { LoanRepayment } from '../../entities/loan-repayment.entity';
+import { CustomsInspection } from '../../entities/customs-inspection.entity';
 import { TenantReportsService } from './tenant-reports.service';
+import { ReportsController } from './reports.controller';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Load, Truck, User, Trip, Payment, Bid, CreditAccount, CreditTransaction,
       EmailTemplate, BulkEmailLog, Tenant, Driver, ParkingReservation, Invoice, DisputeV2,
+      LoanRequest, LoanRepayment, CustomsInspection,
     ]),
     EnhancedAuthModule,
     SubscriptionModule,
     NotificationsModule,
   ],
-  controllers: [TenantDashboardController, PartnerBillingController, TenantBulkEmailController],
+  controllers: [TenantDashboardController, PartnerBillingController, TenantBulkEmailController, ReportsController],
   providers: [TenantDashboardService, TenantReportsService, BulkEmailService, AIEmailAssistantService],
   exports: [TenantDashboardService, TenantReportsService],
 })

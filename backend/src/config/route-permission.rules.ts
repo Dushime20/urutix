@@ -164,6 +164,14 @@ export const ROUTE_PERMISSION_RULES: RoutePermissionRule[] = [
   // ── Tenant dashboard (tenant-scoped ops) ──────────────────────────────────────
   { pattern: /^tenant-dashboard\//, permissions: ['analytics:view_tenant', 'cargo:view', 'fleet:view'] },
 
+  // ── Role-scoped report generation (own data only; service enforces ownership) ─
+  { methods: ['GET', 'HEAD'], pattern: /^reports(\/|$)/, permissions: [
+    'analytics:view', 'analytics:view_own', 'analytics:view_tenant', 'analytics:view_all',
+    'cargo:view', 'cargo:view_own', 'fleet:view', 'fleet:view_own', 'trips:view', 'trips:view_assigned',
+    'customs:view', 'parking:view', 'parking:view_own', 'parking:export',
+    'lending:view', 'lending:view_own', 'brokers:view', 'receivers:view',
+  ] },
+
   // ── Admin (super-admin / tenant admin capabilities) ───────────────────────────
   { pattern: /^admin\/permissions/, permissions: ['users:permissions.manage'] },
   { pattern: /^admin\/users/, permissions: ['users:permissions.manage', 'users:view_own'] },

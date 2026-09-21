@@ -66,6 +66,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           subItems: [
             { label: 'Reservations', path: '/dashboard/parking/reservations' },
             { label: 'Reservation Fees', path: '/dashboard/parking/fees' },
+            { label: 'Generate Reports', path: '/dashboard/parking/reports', icon: FileSpreadsheet },
           ],
         },
       ];
@@ -81,6 +82,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           subItems: [
             { label: 'My Cargos', path: '/cargo-owner/cargos/my-cargos' },
             { label: 'Live Tracking', path: '/cargo-owner/tracking' },
+            { label: 'Generate Reports', path: '/dashboard/reports/generate', icon: FileSpreadsheet },
           ]
         },
         { label: 'Settings', path: '/cargo-owner/settings', icon: Settings },
@@ -118,6 +120,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Financial', path: `${basePath}/pending-payments` },
             { label: 'Financial Analytics', path: `${basePath}/analytics/financial` },
             { label: 'Custom Reports', path: `${basePath}/reports/builder` },
+            { label: 'Generate Reports', path: `${basePath}/reports/generate`, icon: FileSpreadsheet },
           ]
         },
         {
@@ -126,6 +129,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Headphones,
           subItems: [
             { label: 'Report Issue', path: `${basePath}/support/new` },
+            { label: 'Generate Reports', path: `${basePath}/reports/generate`, icon: FileSpreadsheet },
           ]
         },
       ];
@@ -152,6 +156,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: DollarSign,
           subItems: [
             { label: 'Commissions', path: '/dashboard/broker/commissions' },
+            { label: 'Generate Reports', path: '/dashboard/broker/reports', icon: FileSpreadsheet },
           ]
         },
         {
@@ -160,6 +165,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Headphones,
           subItems: [
             { label: 'Report Issue', path: '/dashboard/broker/support/new' },
+            { label: 'Generate Reports', path: '/dashboard/broker/reports', icon: FileSpreadsheet },
           ]
         },
       ];
@@ -190,6 +196,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Earnings Registry', path: '/dashboard/driver/earnings' },
             { label: 'Performance Metrics', path: '/dashboard/driver/analytics' },
             { label: 'Wallet & Advances', path: '/dashboard/driver/wallet' },
+            { label: 'Generate Reports', path: '/dashboard/driver/reports', icon: FileSpreadsheet },
           ]
         },
         {
@@ -199,6 +206,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           subItems: [
             { label: 'Report Issue', path: '/dashboard/driver/support/new' },
             { label: 'Parking Reservation', path: '/dashboard/driver/parking' },
+            { label: 'Generate Reports', path: '/dashboard/driver/reports', icon: FileSpreadsheet },
           ]
         },
         { label: 'Account', path: '/dashboard/driver/profile', icon: User },
@@ -243,6 +251,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           subItems: [
             { label: 'Report Issue', path: '/dashboard/fleet/support/new' },
             { label: 'My Parking Reservations', path: '/dashboard/fleet/parking-reservations' },
+            { label: 'Generate Reports', path: '/dashboard/fleet/reports/generate', icon: FileSpreadsheet },
           ]
         },
       ];
@@ -279,6 +288,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Financial Matrix', path: '/admin/financial' },
             { label: 'Intelligence Analytics', path: '/admin/analytics' },
             { label: 'Reporting Engine', path: '/admin/reports' },
+            { label: 'Generate Reports', path: '/admin/reports/generate', icon: FileSpreadsheet },
             { label: 'Account & Settings', path: '/admin/profile' },
             { label: 'Strategic Settings', path: '/admin/advanced-settings' },
             { label: 'System Configuration', path: '/admin/system-settings' },
@@ -291,6 +301,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           subItems: [
             { label: 'All Tickets', path: '/admin/support' },
             { label: 'Analytics', path: '/admin/support/analytics' },
+            { label: 'Generate Reports', path: '/admin/reports/generate', icon: FileSpreadsheet },
             { label: 'Notifications Hub', path: '/admin/onboarding' },
           ]
         },
@@ -331,6 +342,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Risk Analysis', path: '/lender/risk', icon: AlertTriangle },
             { label: 'Interest Tracking', path: '/lender/interest', icon: TrendingUp },
             { label: 'Financial Reports', path: '/lender/reports', icon: FileText },
+            { label: 'Generate Reports', path: '/lender/reports/generate', icon: FileSpreadsheet },
           ]
         },
         {
@@ -339,6 +351,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Headphones,
           subItems: [
             { label: 'Report Issue', path: '/lender/support/new' },
+            { label: 'Generate Reports', path: '/lender/reports/generate', icon: FileSpreadsheet },
           ]
         },
       ];
@@ -367,6 +380,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Checkpoints', path: '/dashboard/customs/checkpoints' },
             { label: 'Analytics', path: '/dashboard/customs/analytics' },
             { label: 'Audit Log', path: '/dashboard/customs/audit' },
+            { label: 'Generate Reports', path: '/dashboard/customs/reports/generate', icon: FileSpreadsheet },
           ]
         },
       ];
@@ -418,6 +432,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
       { label: 'All Cargos', path: '/dashboard/cargos', icon: Package },
       { label: 'Transactions', path: '/dashboard/payments', icon: CreditCard },
       { label: 'Support', path: '/dashboard/support', icon: HelpCircle },
+      { label: 'Generate Reports', path: '/dashboard/reports/generate', icon: FileSpreadsheet },
     ];
   }, [user?.role]);
 

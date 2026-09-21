@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, ChevronDown, LogOut, Shield, Menu, X, LayoutDashboard, BarChart3, Users, Building2, Route, Truck, Package, Activity, Server, DollarSign, ShieldCheck, Gavel, FileText, Landmark, UserCircle, FileCheck, Tags, CreditCard, Bell, Mail } from 'lucide-react';
+import { Search, User, ChevronDown, LogOut, Shield, Menu, X, LayoutDashboard, BarChart3, Users, Building2, Route, Truck, Package, Activity, Server, DollarSign, ShieldCheck, Gavel, FileText, Landmark, UserCircle, FileCheck, Tags, CreditCard, Bell, Mail, FileSpreadsheet } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdminNotificationDropdown from './AdminNotificationDropdown';
 import ThemeToggle from '../Theme/ThemeToggle';
@@ -205,6 +205,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                                         items: [
                                             { label: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
                                             { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
+                                            { label: 'Generate Reports', icon: FileSpreadsheet, path: '/admin/reports/generate' },
                                         ]
                                     },
                                     {

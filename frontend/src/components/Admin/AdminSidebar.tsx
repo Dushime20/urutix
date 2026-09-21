@@ -22,6 +22,7 @@ import {
     ChevronRight,
     ArrowRight,
     Mail,
+    FileSpreadsheet,
 } from 'lucide-react';
 import { TranslatedText } from '../translated-text';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
@@ -48,6 +49,7 @@ const AdminSidebar: React.FC = () => {
             items: [
                 { label: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
                 { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
+                { label: 'Generate Reports', icon: FileSpreadsheet, path: '/admin/reports/generate' },
             ]
         },
         {

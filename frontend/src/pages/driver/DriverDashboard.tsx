@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Activity,
   ShieldCheck,
@@ -20,6 +20,7 @@ import {
   FileText,
   Package,
   ClipboardCheck,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -69,6 +70,7 @@ const DriverDashboard: React.FC = () => {
   const { tSync: t } = useTranslation();
   const { compact: fmtMoney } = useCurrencyFormat();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
   const [driverId, setDriverId] = useState<string>('');
@@ -241,6 +243,7 @@ const DriverDashboard: React.FC = () => {
         { id: 'fuel', label: 'Fuel management', icon: FuelIcon },
         { id: 'wallet', label: 'Wallet & Advances', icon: DollarSign },
         { id: 'earnings', label: 'Earnings Registry', icon: Activity },
+        { id: 'reports', label: 'Generate Reports', icon: FileSpreadsheet },
         { id: 'safety', label: 'Safety Records', icon: Shield },
         { id: 'documents', label: 'Document Vault', icon: FileText },
       ]
@@ -271,7 +274,13 @@ const DriverDashboard: React.FC = () => {
         isRefreshing={isRefreshing}
         onRefresh={handleRefresh}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={(id) => {
+          if (id === 'reports') {
+            navigate('/dashboard/driver/reports');
+            return;
+          }
+          setActiveTab(id);
+        }}
         tabs={tabs}
       />
 

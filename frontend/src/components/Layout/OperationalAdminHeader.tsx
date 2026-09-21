@@ -5,7 +5,7 @@ import {
   LogOut, User, Menu, X, ChevronDown,
   Home, Activity, BarChart3, DollarSign,
   Route, Package, Scale, Settings, ClipboardList,
-  Bell, FileText,
+  Bell, FileSpreadsheet,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
@@ -55,7 +55,7 @@ const navItems: NavItem[] = [
     subItems: [
       { label: 'Analytics',          path: '/admin-operational/analytics',    icon: BarChart3 },
       { label: 'Financial Overview', path: '/admin-operational/financial',    icon: DollarSign },
-      { label: 'Reports',            path: '/admin-operational/reports',      icon: FileText },
+      { label: 'Generate Reports',   path: '/admin-operational/reports',      icon: FileSpreadsheet },
       { label: 'Activity Logs',      path: '/admin-operational/activity-logs', icon: Bell },
     ],
   },

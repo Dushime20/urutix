@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import { driverApi } from '../../services/driverApi';
 import { TacticalAiAssistant } from '../DriverDashboard/TacticalAiAssistant';
 import DashboardFooter from './DashboardFooter';
+import DashboardLayout from './DashboardLayout';
 import MobileBottomNav from './MobileBottomNav';
-import { useNavigate } from 'react-router-dom';
 import ModernLoader from '../common/ModernLoader';
-import { cn } from '../../utils/cn';
 import { IncidentReportModal } from '../DriverDashboard/IncidentReportModal';
 
 const DriverLayout: React.FC = () => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [driverId, setDriverId] = useState<string>('');
   const [showIncidentModal, setShowIncidentModal] = useState(false);
 
@@ -62,6 +62,16 @@ const DriverLayout: React.FC = () => {
 
   if (isLoading || !user) {
     return <ModernLoader isLoading={true} text="Initializing_Mission" />;
+  }
+
+  const isReports = location.pathname.includes('/reports');
+
+  if (isReports) {
+    return (
+      <DashboardLayout>
+        <Outlet />
+      </DashboardLayout>
+    );
   }
 
   return (

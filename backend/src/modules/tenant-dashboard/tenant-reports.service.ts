@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Load } from '../../entities/load.entity';
 import { Truck } from '../../entities/truck.entity';
 import { User } from '../../entities/user.entity';
@@ -11,6 +11,9 @@ import { Driver } from '../../entities/driver.entity';
 import { ParkingReservation } from '../../entities/parking-reservation.entity';
 import { Invoice } from '../financial/entities/invoice.entity';
 import { DisputeV2 } from '../../entities/dispute-v2.entity';
+import { LoanRequest } from '../../entities/loan-request.entity';
+import { LoanRepayment } from '../../entities/loan-repayment.entity';
+import { CustomsInspection } from '../../entities/customs-inspection.entity';
 import { categoriesForKind, type TicketKind } from '../disputes/ticket-kind';
 
 export type TenantReportCategory =
@@ -25,7 +28,10 @@ export type TenantReportCategory =
   | 'users'
   | 'invoices'
   | 'payments'
-  | 'credits';
+  | 'credits'
+  | 'loans'
+  | 'repayments'
+  | 'inspections';
 
 export interface TenantReportQuery {
   category: TenantReportCategory;
@@ -34,6 +40,13 @@ export interface TenantReportQuery {
   search?: string;
   dateFrom?: string;
   dateTo?: string;
+}
+
+export interface ReportScope {
+  userId: string;
+  role: string;
+  tenantId: string;
+  email?: string;
 }
 
 export interface TenantReportResult {
@@ -45,6 +58,16 @@ export interface TenantReportResult {
 }
 
 const MAX_ROWS = 5000;
+const TICKETS: TenantReportCategory[] = ['issues', 'support', 'disputes'];
+const ELEVATED_ROLES = new Set(['SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN']);
+const FLEET_ROLES = new Set([
+  'TRUCK_OWNER',
+  'FLEET_MANAGER',
+  'FLEET_DISPATCHER',
+  'FLEET_ACCOUNTANT',
+  'FLEET_SAFETY_OFFICER',
+]);
+
 const REPORT_TITLES: Record<TenantReportCategory, string> = {
   issues: 'Issues',
   support: 'Support',
@@ -58,7 +81,43 @@ const REPORT_TITLES: Record<TenantReportCategory, string> = {
   invoices: 'Invoices',
   payments: 'Payments',
   credits: 'Credits',
+  loans: 'Loans',
+  repayments: 'Repayments',
+  inspections: 'Inspections',
 };
+
+const ALL_CATEGORIES = Object.keys(REPORT_TITLES) as TenantReportCategory[];
+
+const ROLE_ALLOWED_CATEGORIES: Record<string, TenantReportCategory[]> = {
+  SUPER_ADMIN: ALL_CATEGORIES,
+  ADMIN: ALL_CATEGORIES,
+  TENANT_ADMIN: ALL_CATEGORIES,
+  CARGO_OWNER: [...TICKETS, 'trips', 'cargo', 'parking', 'invoices', 'payments', 'credits', 'loans', 'inspections'],
+  CARGO_RECEIVER: [...TICKETS, 'trips', 'cargo', 'inspections'],
+  TRUCK_OWNER: [...TICKETS, 'fleet', 'drivers', 'trips', 'cargo', 'parking', 'invoices', 'payments', 'credits', 'loans'],
+  FLEET_MANAGER: [...TICKETS, 'fleet', 'drivers', 'trips', 'cargo', 'parking', 'invoices', 'payments', 'credits', 'loans'],
+  FLEET_DISPATCHER: [...TICKETS, 'fleet', 'drivers', 'trips', 'cargo'],
+  FLEET_ACCOUNTANT: [...TICKETS, 'trips', 'invoices', 'payments', 'credits', 'loans'],
+  FLEET_SAFETY_OFFICER: [...TICKETS, 'fleet', 'drivers', 'trips'],
+  DRIVER: [...TICKETS, 'trips', 'parking', 'payments', 'inspections'],
+  BROKER: [...TICKETS, 'trips', 'cargo', 'invoices', 'payments', 'inspections'],
+  LENDER: [...TICKETS, 'loans', 'repayments', 'payments'],
+  CUSTOMS_OFFICER: [...TICKETS, 'inspections', 'trips', 'cargo'],
+  PARKING_RESERVATION_MANAGER: [...TICKETS, 'parking'],
+  AGENT: [...TICKETS, 'trips', 'cargo'],
+};
+
+function isElevated(role: string): boolean {
+  return ELEVATED_ROLES.has(role);
+}
+
+function isFleetFamily(role: string): boolean {
+  return FLEET_ROLES.has(role);
+}
+
+function denyAll<T>(qb: SelectQueryBuilder<T>): void {
+  qb.andWhere('1 = 0');
+}
 
 function fmtDate(value?: Date | string | null): string {
   if (!value) return '';
@@ -90,6 +149,10 @@ function inRange(iso: string, from?: string, to?: string): boolean {
   return true;
 }
 
+function allowedCategories(role: string): TenantReportCategory[] {
+  return ROLE_ALLOWED_CATEGORIES[role] ?? [...TICKETS];
+}
+
 @Injectable()
 export class TenantReportsService {
   constructor(
@@ -103,12 +166,26 @@ export class TenantReportsService {
     @InjectRepository(ParkingReservation) private readonly parkingRepo: Repository<ParkingReservation>,
     @InjectRepository(Invoice) private readonly invoiceRepo: Repository<Invoice>,
     @InjectRepository(DisputeV2) private readonly disputeRepo: Repository<DisputeV2>,
+    @InjectRepository(LoanRequest) private readonly loanRepo: Repository<LoanRequest>,
+    @InjectRepository(LoanRepayment) private readonly repaymentRepo: Repository<LoanRepayment>,
+    @InjectRepository(CustomsInspection) private readonly inspectionRepo: Repository<CustomsInspection>,
   ) {}
 
-  async generate(tenantId: string, query: TenantReportQuery): Promise<TenantReportResult> {
+  async generate(tenantId: string, query: TenantReportQuery, scope: ReportScope): Promise<TenantReportResult> {
     const category = query.category;
     if (!REPORT_TITLES[category]) {
       throw new BadRequestException(`Unknown report category: ${category}`);
+    }
+    if (!scope?.userId || !scope?.role) {
+      throw new ForbiddenException('Authenticated user is required');
+    }
+    if (!allowedCategories(scope.role).includes(category)) {
+      throw new ForbiddenException('This report is not available for your role');
+    }
+
+    const scopedTenantId = tenantId || scope.tenantId;
+    if (!scopedTenantId) {
+      throw new BadRequestException('Tenant context is required');
     }
 
     let rows: Record<string, string | number>[] = [];
@@ -117,41 +194,50 @@ export class TenantReportsService {
       case 'support':
       case 'disputes': {
         const kind: TicketKind = category === 'issues' ? 'issue' : category === 'support' ? 'support' : 'dispute';
-        rows = await this.ticketRows(tenantId, kind, query);
+        rows = await this.ticketRows(scopedTenantId, kind, query, scope);
         break;
       }
       case 'fleet':
-        rows = await this.fleetRows(tenantId, query.status);
+        rows = await this.fleetRows(scopedTenantId, query.status, scope);
         break;
       case 'drivers':
-        rows = await this.driverRows(tenantId, query.status);
+        rows = await this.driverRows(scopedTenantId, query.status, scope);
         break;
       case 'trips':
-        rows = await this.tripRows(tenantId, query.status);
+        rows = await this.tripRows(scopedTenantId, query.status, scope);
         break;
       case 'cargo':
-        rows = await this.cargoRows(tenantId, query.status);
+        rows = await this.cargoRows(scopedTenantId, query.status, scope);
         break;
       case 'parking':
-        rows = await this.parkingRows(tenantId, query.status);
+        rows = await this.parkingRows(scopedTenantId, query.status, scope);
         break;
       case 'users':
-        rows = await this.userRows(tenantId, query.status);
+        rows = await this.userRows(scopedTenantId, query.status, scope);
         break;
       case 'invoices':
-        rows = await this.invoiceRows(tenantId, query.status);
+        rows = await this.invoiceRows(scopedTenantId, query.status, scope);
         break;
       case 'payments':
-        rows = await this.paymentRows(tenantId, query.status);
+        rows = await this.paymentRows(scopedTenantId, query.status, scope);
         break;
       case 'credits':
-        rows = await this.creditRows(tenantId, query.status);
+        rows = await this.creditRows(scopedTenantId, query.status, scope);
+        break;
+      case 'loans':
+        rows = await this.loanRows(scopedTenantId, query.status, scope);
+        break;
+      case 'repayments':
+        rows = await this.repaymentRows(scopedTenantId, query.status, scope);
+        break;
+      case 'inspections':
+        rows = await this.inspectionRows(scopedTenantId, query.status, scope);
         break;
     }
 
     rows = rows.filter((row) => {
       if (!matchesSearch(row, query.search)) return false;
-      const dateVal = String(row.Created || row.Issued || row.Start || row.Hired || row.PickupDate || '');
+      const dateVal = String(row.Created || row.Issued || row.Start || row.Hired || row.PickupDate || row.Date || '');
       return inRange(dateVal, query.dateFrom, query.dateTo);
     });
 
@@ -180,7 +266,7 @@ export class TenantReportsService {
     return ['Result'];
   }
 
-  private async ticketRows(tenantId: string, kind: TicketKind, query: TenantReportQuery) {
+  private async ticketRows(tenantId: string, kind: TicketKind, query: TenantReportQuery, scope: ReportScope) {
     const qb = this.disputeRepo
       .createQueryBuilder('d')
       .leftJoinAndSelect('d.complainant', 'complainant')
@@ -192,6 +278,12 @@ export class TenantReportsService {
       .andWhere('d.category IN (:...cats)', { cats: categoriesForKind(kind) })
       .orderBy('d.createdAt', 'DESC')
       .take(MAX_ROWS);
+    if (!isElevated(scope.role)) {
+      qb.andWhere(
+        '(d.complainantUserId = :uid OR d.respondentUserId = :uid OR d.senderId = :uid OR d.driverId = :uid)',
+        { uid: scope.userId },
+      );
+    }
     if (query.status) qb.andWhere('d.status = :status', { status: query.status });
     if (query.priority) qb.andWhere('d.priority = :priority', { priority: query.priority });
     const items = await qb.getMany();
@@ -207,10 +299,21 @@ export class TenantReportsService {
     }));
   }
 
-  private async fleetRows(tenantId: string, status?: string) {
-    const where: any = { tenantId };
-    if (status) where.status = status;
-    const trucks = await this.truckRepo.find({ where, take: MAX_ROWS, order: { createdAt: 'DESC' } });
+  private async fleetRows(tenantId: string, status: string | undefined, scope: ReportScope) {
+    const qb = this.truckRepo
+      .createQueryBuilder('t')
+      .where('t.tenantId = :tenantId', { tenantId })
+      .orderBy('t.createdAt', 'DESC')
+      .take(MAX_ROWS);
+    if (status) qb.andWhere('t.status = :status', { status });
+    if (isElevated(scope.role)) {
+      // tenant-wide
+    } else if (isFleetFamily(scope.role)) {
+      qb.andWhere('t.ownerId = :uid', { uid: scope.userId });
+    } else {
+      denyAll(qb);
+    }
+    const trucks = await qb.getMany();
     return trucks.map((t) => ({
       Plate: t.plateNumber || '',
       Make: t.make || '',
@@ -224,10 +327,23 @@ export class TenantReportsService {
     }));
   }
 
-  private async driverRows(tenantId: string, status?: string) {
-    const where: any = { tenantId };
-    if (status) where.status = status;
-    const drivers = await this.driverRepo.find({ where, take: MAX_ROWS, order: { createdAt: 'DESC' } });
+  private async driverRows(tenantId: string, status: string | undefined, scope: ReportScope) {
+    const qb = this.driverRepo
+      .createQueryBuilder('d')
+      .where('d.tenantId = :tenantId', { tenantId })
+      .orderBy('d.createdAt', 'DESC')
+      .take(MAX_ROWS);
+    if (status) qb.andWhere('d.status = :status', { status });
+    if (isElevated(scope.role)) {
+      // tenant-wide
+    } else if (scope.role === 'DRIVER') {
+      qb.andWhere('d.userId = :uid', { uid: scope.userId });
+    } else if (isFleetFamily(scope.role)) {
+      qb.andWhere('d.employerId = :uid', { uid: scope.userId });
+    } else {
+      denyAll(qb);
+    }
+    const drivers = await qb.getMany();
     return drivers.map((d) => ({
       Name: `${d.firstName || ''} ${d.lastName || ''}`.trim(),
       Email: d.email || '',
@@ -241,16 +357,19 @@ export class TenantReportsService {
     }));
   }
 
-  private async tripRows(tenantId: string, status?: string) {
+  private async tripRows(tenantId: string, status: string | undefined, scope: ReportScope) {
     const qb = this.tripRepo
       .createQueryBuilder('t')
       .leftJoinAndSelect('t.pickupLocation', 'pickup')
       .leftJoinAndSelect('t.deliveryLocation', 'delivery')
       .leftJoinAndSelect('t.truck', 'truck')
+      .leftJoinAndSelect('t.load', 'load')
+      .leftJoinAndSelect('t.driver', 'driver')
       .where('t.tenantId = :tenantId', { tenantId })
       .orderBy('t.createdAt', 'DESC')
       .take(MAX_ROWS);
     if (status) qb.andWhere('t.status = :status', { status });
+    this.applyTripOwnership(qb, scope);
     const trips = await qb.getMany();
     return trips.map((t) => ({
       Trip: t.tripNumber || t.id,
@@ -265,10 +384,86 @@ export class TenantReportsService {
     }));
   }
 
-  private async cargoRows(tenantId: string, status?: string) {
-    const where: any = { tenantId };
-    if (status) where.status = status;
-    const loads = await this.loadRepo.find({ where, take: MAX_ROWS, order: { createdAt: 'DESC' } });
+  private applyTripOwnership(qb: SelectQueryBuilder<Trip>, scope: ReportScope) {
+    const uid = scope.userId;
+    if (isElevated(scope.role)) return;
+    if (scope.role === 'DRIVER') {
+      qb.andWhere('driver.userId = :uid', { uid });
+      return;
+    }
+    if (scope.role === 'CARGO_OWNER') {
+      qb.andWhere('load.cargoOwnerId = :uid', { uid });
+      return;
+    }
+    if (scope.role === 'CARGO_RECEIVER') {
+      qb.andWhere('load.receiverId = :uid', { uid });
+      return;
+    }
+    if (scope.role === 'BROKER' || scope.role === 'AGENT') {
+      qb.andWhere('load.brokerId = :uid', { uid });
+      return;
+    }
+    if (isFleetFamily(scope.role)) {
+      qb.andWhere('truck.ownerId = :uid', { uid });
+      return;
+    }
+    if (scope.role === 'CUSTOMS_OFFICER') {
+      qb.andWhere(
+        `EXISTS (SELECT 1 FROM customs_inspections ci WHERE ci."tripId" = t.id AND ci."officerId" = :uid)`,
+        { uid },
+      );
+      return;
+    }
+    denyAll(qb);
+  }
+
+  private async cargoRows(tenantId: string, status: string | undefined, scope: ReportScope) {
+    const qb = this.loadRepo
+      .createQueryBuilder('c')
+      .where('c.tenantId = :tenantId', { tenantId })
+      .orderBy('c.createdAt', 'DESC')
+      .take(MAX_ROWS);
+    if (status) qb.andWhere('c.status = :status', { status });
+    const uid = scope.userId;
+    if (isElevated(scope.role)) {
+      // tenant-wide
+    } else if (scope.role === 'CARGO_OWNER') {
+      qb.andWhere('c.cargoOwnerId = :uid', { uid });
+    } else if (scope.role === 'CARGO_RECEIVER') {
+      qb.andWhere('c.receiverId = :uid', { uid });
+    } else if (scope.role === 'BROKER' || scope.role === 'AGENT') {
+      qb.andWhere('c.brokerId = :uid', { uid });
+    } else if (isFleetFamily(scope.role)) {
+      qb.andWhere(
+        `EXISTS (
+          SELECT 1 FROM trips trip
+          INNER JOIN trucks truck ON truck.id = trip."truckId"
+          WHERE trip."loadId" = c.id AND truck."ownerId" = :uid
+        )`,
+        { uid },
+      );
+    } else if (scope.role === 'DRIVER') {
+      qb.andWhere(
+        `EXISTS (
+          SELECT 1 FROM trips trip
+          INNER JOIN drivers d ON d.id = trip."driverId"
+          WHERE trip."loadId" = c.id AND d."userId" = :uid
+        )`,
+        { uid },
+      );
+    } else if (scope.role === 'CUSTOMS_OFFICER') {
+      qb.andWhere(
+        `EXISTS (
+          SELECT 1 FROM customs_inspections ci
+          INNER JOIN trips trip ON trip.id = ci."tripId"
+          WHERE trip."loadId" = c.id AND ci."officerId" = :uid
+        )`,
+        { uid },
+      );
+    } else {
+      denyAll(qb);
+    }
+    const loads = await qb.getMany();
     return loads.map((c) => ({
       Title: c.title || c.id,
       Type: c.cargoType || c.loadType || '',
@@ -282,10 +477,27 @@ export class TenantReportsService {
     }));
   }
 
-  private async parkingRows(tenantId: string, status?: string) {
-    const where: any = { tenantId };
-    if (status) where.status = status;
-    const items = await this.parkingRepo.find({ where, take: MAX_ROWS, order: { createdAt: 'DESC' } });
+  private async parkingRows(tenantId: string, status: string | undefined, scope: ReportScope) {
+    const qb = this.parkingRepo
+      .createQueryBuilder('p')
+      .where('p.tenantId = :tenantId', { tenantId })
+      .orderBy('p.createdAt', 'DESC')
+      .take(MAX_ROWS);
+    if (status) qb.andWhere('p.status = :status', { status });
+    if (isElevated(scope.role) || scope.role === 'PARKING_RESERVATION_MANAGER') {
+      // facility / tenant-wide
+    } else if (scope.role === 'DRIVER') {
+      qb.andWhere('(p.driverEmail = :email OR p.createdByUserId = :uid)', {
+        email: scope.email || '',
+        uid: scope.userId,
+      });
+    } else {
+      qb.andWhere('(p.email = :email OR p.createdByUserId = :uid)', {
+        email: scope.email || '',
+        uid: scope.userId,
+      });
+    }
+    const items = await qb.getMany();
     return items.map((p) => ({
       Reference: p.reservationReference || '',
       Company: p.companyName || '',
@@ -298,7 +510,10 @@ export class TenantReportsService {
     }));
   }
 
-  private async userRows(tenantId: string, status?: string) {
+  private async userRows(tenantId: string, status: string | undefined, scope: ReportScope) {
+    if (!isElevated(scope.role)) {
+      return [];
+    }
     const qb = this.userRepo
       .createQueryBuilder('u')
       .leftJoinAndSelect('u.profile', 'profile')
@@ -317,7 +532,7 @@ export class TenantReportsService {
     }));
   }
 
-  private async invoiceRows(tenantId: string, status?: string) {
+  private async invoiceRows(tenantId: string, status: string | undefined, scope: ReportScope) {
     const qb = this.invoiceRepo
       .createQueryBuilder('inv')
       .innerJoin('inv.tenant', 'tenant')
@@ -325,6 +540,9 @@ export class TenantReportsService {
       .orderBy('inv.createdAt', 'DESC')
       .take(MAX_ROWS);
     if (status) qb.andWhere('LOWER(CAST(inv.status AS TEXT)) = :status', { status: status.toLowerCase() });
+    if (!isElevated(scope.role)) {
+      qb.andWhere('(inv.customerId = :uid OR inv.senderId = :uid)', { uid: scope.userId });
+    }
     const invoices = await qb.getMany();
     return invoices.map((i) => ({
       Invoice: i.invoiceNumber || i.id,
@@ -337,10 +555,17 @@ export class TenantReportsService {
     }));
   }
 
-  private async paymentRows(tenantId: string, status?: string) {
-    const where: any = { tenantId };
-    if (status) where.status = status.toLowerCase();
-    const payments = await this.paymentRepo.find({ where, take: MAX_ROWS, order: { createdAt: 'DESC' } });
+  private async paymentRows(tenantId: string, status: string | undefined, scope: ReportScope) {
+    const qb = this.paymentRepo
+      .createQueryBuilder('p')
+      .where('p.tenantId = :tenantId', { tenantId })
+      .orderBy('p.createdAt', 'DESC')
+      .take(MAX_ROWS);
+    if (status) qb.andWhere('p.status = :status', { status: status.toLowerCase() });
+    if (!isElevated(scope.role)) {
+      qb.andWhere('(p.payerId = :uid OR p.payeeId = :uid)', { uid: scope.userId });
+    }
+    const payments = await qb.getMany();
     return payments.map((p) => ({
       Reference: p.referenceNumber || p.id,
       Amount: p.amount ?? '',
@@ -352,10 +577,18 @@ export class TenantReportsService {
     }));
   }
 
-  private async creditRows(tenantId: string, status?: string) {
-    const where: any = { tenantId };
-    if (status) where.type = status;
-    const txs = await this.creditRepo.find({ where, take: MAX_ROWS, order: { createdAt: 'DESC' } });
+  private async creditRows(tenantId: string, status: string | undefined, scope: ReportScope) {
+    const qb = this.creditRepo
+      .createQueryBuilder('t')
+      .addSelect('t.userId')
+      .where('t.tenantId = :tenantId', { tenantId })
+      .orderBy('t.createdAt', 'DESC')
+      .take(MAX_ROWS);
+    if (status) qb.andWhere('t.type = :status', { status });
+    if (!isElevated(scope.role)) {
+      qb.andWhere('t.userId = :uid', { uid: scope.userId });
+    }
+    const txs = await qb.getMany();
     return txs.map((t) => ({
       Type: t.type || '',
       Amount: t.amount ?? '',
@@ -363,6 +596,101 @@ export class TenantReportsService {
       Reason: t.description || '',
       Source: t.referenceType || '',
       Created: fmtDate(t.createdAt),
+    }));
+  }
+
+  private applyLoanOwnership(qb: SelectQueryBuilder<any>, alias: string, scope: ReportScope) {
+    const uid = scope.userId;
+    if (isElevated(scope.role)) return;
+    if (scope.role === 'LENDER') {
+      qb.andWhere(`${alias}.lender_id = :uid`, { uid });
+      return;
+    }
+    if (scope.role === 'CARGO_OWNER' || isFleetFamily(scope.role)) {
+      qb.andWhere(`(${alias}.borrower_id = :uid OR ${alias}.created_by = :uid)`, { uid });
+      return;
+    }
+    denyAll(qb);
+  }
+
+  private async loanRows(tenantId: string, status: string | undefined, scope: ReportScope) {
+    const qb = this.loanRepo
+      .createQueryBuilder('loan')
+      .where('loan.tenant_id = :tenantId', { tenantId })
+      .orderBy('loan.created_at', 'DESC')
+      .take(MAX_ROWS);
+    if (status) qb.andWhere('loan.status = :status', { status: status.toLowerCase() });
+    this.applyLoanOwnership(qb, 'loan', scope);
+    const loans = await qb.getMany();
+    return loans.map((l) => ({
+      Loan: l.loan_number || l.id,
+      Amount: l.requested_amount ?? '',
+      Approved: l.approved_amount ?? '',
+      Status: l.status || '',
+      Due: fmtDate(l.due_date),
+      Created: fmtDate(l.created_at as any),
+    }));
+  }
+
+  private async repaymentRows(tenantId: string, status: string | undefined, scope: ReportScope) {
+    const qb = this.repaymentRepo
+      .createQueryBuilder('r')
+      .innerJoinAndSelect('r.loan_request', 'loan')
+      .where('loan.tenant_id = :tenantId', { tenantId })
+      .orderBy('r.created_at', 'DESC')
+      .take(MAX_ROWS);
+    if (status) qb.andWhere('loan.status = :status', { status: status.toLowerCase() });
+    this.applyLoanOwnership(qb, 'loan', scope);
+    const items = await qb.getMany();
+    return items.map((r) => ({
+      Loan: r.loan_request?.loan_number || r.loan_request_id,
+      Amount: r.amount ?? '',
+      Principal: r.principal_paid ?? '',
+      Interest: r.interest_paid ?? '',
+      Currency: r.currency || '',
+      Date: fmtDate(r.repayment_date),
+      Created: fmtDate(r.created_at),
+    }));
+  }
+
+  private async inspectionRows(tenantId: string, status: string | undefined, scope: ReportScope) {
+    const qb = this.inspectionRepo
+      .createQueryBuilder('insp')
+      .leftJoinAndSelect('insp.trip', 'trip')
+      .leftJoinAndSelect('trip.load', 'load')
+      .leftJoinAndSelect('trip.driver', 'driver')
+      .leftJoinAndSelect('trip.truck', 'truck')
+      .where('insp.tenantId = :tenantId', { tenantId })
+      .orderBy('insp.createdAt', 'DESC')
+      .take(MAX_ROWS);
+    if (status) qb.andWhere('insp.status = :status', { status });
+    const uid = scope.userId;
+    if (isElevated(scope.role)) {
+      // tenant-wide
+    } else if (scope.role === 'CUSTOMS_OFFICER') {
+      qb.andWhere('insp.officerId = :uid', { uid });
+    } else if (scope.role === 'CARGO_OWNER') {
+      qb.andWhere('load.cargoOwnerId = :uid', { uid });
+    } else if (scope.role === 'CARGO_RECEIVER') {
+      qb.andWhere('load.receiverId = :uid', { uid });
+    } else if (scope.role === 'BROKER' || scope.role === 'AGENT') {
+      qb.andWhere('load.brokerId = :uid', { uid });
+    } else if (scope.role === 'DRIVER') {
+      qb.andWhere('(insp.driverId = :uid OR driver.userId = :uid)', { uid });
+    } else if (isFleetFamily(scope.role)) {
+      qb.andWhere('truck.ownerId = :uid', { uid });
+    } else {
+      denyAll(qb);
+    }
+    const items = await qb.getMany();
+    return items.map((i) => ({
+      Reference: i.shipmentReference || i.id,
+      Plate: i.plateNumber || '',
+      Container: i.containerNumber || '',
+      Driver: i.driverName || '',
+      Status: i.status || '',
+      Risk: i.riskLevel || '',
+      Created: fmtDate(i.createdAt),
     }));
   }
 
