@@ -16,6 +16,7 @@ import {
   FileCheck2,
   Gavel,
 } from "lucide-react"
+import { PublicHeroBackdrop } from "@/components/home/PublicHeroBackdrop"
 import { PublicNavbar } from "@/components/home/PublicNavbar"
 import { PublicFooter } from "@/components/home/PublicFooter"
 import { TranslatedText } from "@/components/translated-text"
@@ -180,21 +181,17 @@ export default function WhoItsForPage() {
       <PublicNavbar alwaysSolid />
 
       {/* Hero Section */}
-      <section className="relative bg-primary-950 text-white py-16 lg:py-24 overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-20"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1920&q=80')" }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-950 via-primary-950/90 to-primary-900/70" />
+      <section className="relative isolate bg-[#0e1c2a] text-white py-16 lg:py-24 overflow-hidden">
+        <PublicHeroBackdrop image="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1920&q=80" />
         <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <p className="text-primary-400 text-xs font-bold uppercase tracking-[0.2em] mb-3">
+            <p className="text-sky-300 text-xs font-bold uppercase tracking-[0.2em] mb-4">
               <TranslatedText text="Who it’s for" />
             </p>
-            <h1 className="font-manrope text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight mb-5">
+            <h1 className="font-manrope text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.12] mb-6 drop-shadow-sm">
               <TranslatedText text="Purpose-built workspaces for every participant in road freight" />
             </h1>
-            <p className="text-primary-100/90 text-base sm:text-lg leading-relaxed mb-8">
+            <p className="max-w-2xl text-slate-100 text-base sm:text-lg leading-relaxed mb-8">
               <TranslatedText text="UrutiX connects cargo owners, fleet operators, drivers, brokers, and lenders on a single shared data core—giving each role the exact tools they need to move freight faster and get paid on time." />
             </p>
             <div className="flex flex-wrap gap-3">
@@ -206,10 +203,10 @@ export default function WhoItsForPage() {
                     key={role.id}
                     href={`#${role.id}`}
                     onClick={() => setSelectedRole(role.id)}
-                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
+                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0e1c2a] transition-all ${
                       active
                         ? "bg-primary-500 text-white shadow-lg"
-                        : "bg-white/10 text-white hover:bg-white/20 border border-white/15"
+                        : "bg-[#0e1c2a]/55 backdrop-blur-sm text-white hover:bg-white/20 border border-white/30"
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -343,7 +340,7 @@ export default function WhoItsForPage() {
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="bg-primary-900 rounded-[2rem] px-8 py-12 lg:px-14 lg:py-16 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 text-white">
             <div className="max-w-xl">
-              <h2 className="font-manrope text-2xl lg:text-3xl font-extrabold tracking-tight mb-3">
+              <h2 className="font-manrope text-2xl lg:text-3xl font-extrabold text-white tracking-tight mb-3">
                 <TranslatedText text="Operate your own logistics network?" />
               </h2>
               <p className="text-primary-200 text-base leading-relaxed">

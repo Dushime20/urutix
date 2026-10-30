@@ -15,6 +15,7 @@ import {
   MapPin,
   FileCheck2,
 } from "lucide-react"
+import { PublicHeroBackdrop } from "@/components/home/PublicHeroBackdrop"
 import { PublicNavbar } from "@/components/home/PublicNavbar"
 import { PublicFooter } from "@/components/home/PublicFooter"
 import { TranslatedText } from "@/components/translated-text"
@@ -103,20 +104,7 @@ export default function PlatformPage() {
 
       {/* Hero */}
       <section aria-labelledby="platform-hero-title" className="relative isolate bg-[#0e1c2a] text-white py-16 lg:py-24 overflow-hidden">
-        <img
-          src="https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=1920&q=80"
-          alt=""
-          decoding="async"
-          loading="eager"
-          className="absolute inset-0 -z-20 h-full w-full object-cover object-center"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-10"
-          style={{ background: "linear-gradient(90deg, rgba(14,28,42,0.98) 0%, rgba(14,28,42,0.9) 42%, rgba(14,28,42,0.58) 65%, rgba(14,28,42,0.18) 100%)" }}
-        />
-        <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[#0e1c2a]/60 lg:hidden" />
-        <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-[#0e1c2a]/60 via-transparent to-transparent" />
+        <PublicHeroBackdrop image="https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=1920&q=80" />
         <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-sky-300 text-xs font-bold uppercase tracking-[0.2em] mb-4">
@@ -217,7 +205,7 @@ export default function PlatformPage() {
             <p className="text-primary-400 text-xs font-bold uppercase tracking-[0.18em] mb-3">
               <TranslatedText text="Connected Modules" />
             </p>
-            <h2 className="font-manrope text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight mb-3">
+            <h2 className="font-manrope text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight mb-3">
               <TranslatedText text="Extend the platform across finance, white-label & parking" />
             </h2>
           </div>

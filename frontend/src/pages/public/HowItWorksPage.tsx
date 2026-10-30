@@ -15,6 +15,7 @@ import {
   ClipboardCheck,
   Scale,
 } from "lucide-react"
+import { PublicHeroBackdrop } from "@/components/home/PublicHeroBackdrop"
 import { PublicNavbar } from "@/components/home/PublicNavbar"
 import { PublicFooter } from "@/components/home/PublicFooter"
 import { TranslatedText } from "@/components/translated-text"
@@ -140,21 +141,17 @@ export default function HowItWorksPage() {
       <PublicNavbar alwaysSolid />
 
       {/* Hero Section */}
-      <section className="relative bg-primary-950 text-white py-16 lg:py-24 overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-20"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=1920&q=80')" }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-950 via-primary-950/90 to-primary-900/70" />
+      <section className="relative isolate bg-[#0e1c2a] text-white py-16 lg:py-24 overflow-hidden">
+        <PublicHeroBackdrop image="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=1920&q=80" />
         <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <p className="text-primary-400 text-xs font-bold uppercase tracking-[0.2em] mb-3">
+            <p className="text-sky-300 text-xs font-bold uppercase tracking-[0.2em] mb-4">
               <TranslatedText text="How UrutiX Works" />
             </p>
-            <h1 className="font-manrope text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight mb-5">
+            <h1 className="font-manrope text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.12] mb-6 drop-shadow-sm">
               <TranslatedText text="From load post to settlement—one connected digital journey" />
             </h1>
-            <p className="text-primary-100/90 text-base sm:text-lg leading-relaxed mb-8">
+            <p className="max-w-2xl text-slate-100 text-base sm:text-lg leading-relaxed mb-8">
               <TranslatedText text="Every shipment on UrutiX follows a transparent, verifiable four-stage lifecycle that connects procurement, fleet dispatch, live GPS tracking, customs compliance, and financial settlement." />
             </p>
             <div className="flex flex-wrap gap-3">
@@ -167,7 +164,7 @@ export default function HowItWorksPage() {
               </Link>
               <Link
                 to="/parking-reservation"
-                className="inline-flex items-center gap-2 border border-white/30 hover:bg-white/10 text-white font-bold uppercase tracking-wider text-xs px-7 py-3.5 rounded-full transition-colors"
+                className="inline-flex items-center gap-2 border border-white/30 hover:bg-[#0e1c2a]/55 backdrop-blur-sm text-white font-bold uppercase tracking-wider text-xs px-7 py-3.5 rounded-full transition-colors"
               >
                 <Truck className="w-4 h-4" />
                 <TranslatedText text="Reserve Corridor Parking" />
@@ -214,7 +211,7 @@ export default function HowItWorksPage() {
                       </span>
                       <Icon className={`w-4 h-4 ${selected ? "text-white" : "text-primary-500"}`} />
                     </div>
-                    <p className="font-manrope text-base font-bold">
+                    <p className={`font-manrope text-base font-bold ${selected ? "text-white" : "text-primary-900"}`}>
                       <TranslatedText text={item.title} />
                     </p>
                   </button>
@@ -238,7 +235,7 @@ export default function HowItWorksPage() {
                       <span className="inline-block px-3 py-1 rounded-full bg-primary-500 text-[11px] font-bold uppercase tracking-wider mb-2">
                         <TranslatedText text={`Stage ${current.step}`} />
                       </span>
-                      <h3 className="font-manrope text-2xl sm:text-3xl font-extrabold">
+                      <h3 className="font-manrope text-2xl sm:text-3xl font-extrabold text-white">
                         <TranslatedText text={current.title} />
                       </h3>
                     </div>
@@ -334,7 +331,7 @@ export default function HowItWorksPage() {
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="bg-primary-500 rounded-[2rem] px-8 py-12 lg:px-14 lg:py-16 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 text-white">
             <div className="max-w-xl">
-              <h2 className="font-manrope text-2xl lg:text-3xl font-extrabold tracking-tight mb-3">
+              <h2 className="font-manrope text-2xl lg:text-3xl font-extrabold text-white tracking-tight mb-3">
                 <TranslatedText text="Ready to run your freight through UrutiX?" />
               </h2>
               <p className="text-primary-100 text-base leading-relaxed">

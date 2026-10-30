@@ -14,6 +14,7 @@ import {
   ArrowRight,
   ChevronDown,
 } from "lucide-react"
+import { PublicHeroBackdrop } from "@/components/home/PublicHeroBackdrop"
 import { PublicNavbar } from "@/components/home/PublicNavbar"
 import { PublicFooter } from "@/components/home/PublicFooter"
 import { TranslatedText } from "@/components/translated-text"
@@ -75,21 +76,17 @@ export default function SupportPage() {
       <PublicNavbar alwaysSolid />
 
       {/* Hero */}
-      <section className="relative bg-primary-950 text-white py-16 lg:py-24 overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-15"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1920&q=80')" }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-950 via-primary-950/90 to-primary-900/70" />
+      <section className="relative isolate bg-[#0e1c2a] text-white py-16 lg:py-24 overflow-hidden">
+        <PublicHeroBackdrop image="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1920&q=80" />
         <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <p className="text-primary-400 text-xs font-bold uppercase tracking-[0.2em] mb-3">
+            <p className="text-sky-300 text-xs font-bold uppercase tracking-[0.2em] mb-4">
               <TranslatedText text="Support & Help Center" />
             </p>
-            <h1 className="font-manrope text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight mb-5">
+            <h1 className="font-manrope text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.12] mb-6 drop-shadow-sm">
               <TranslatedText text="We’re here to keep your freight moving" />
             </h1>
-            <p className="text-primary-100/90 text-base sm:text-lg leading-relaxed mb-8">
+            <p className="max-w-2xl text-slate-100 text-base sm:text-lg leading-relaxed mb-8">
               <TranslatedText text="Reach our operations and support team, look up a corridor parking reservation, or browse quick answers for shippers, fleets, drivers, brokers, and lenders." />
             </p>
             <div className="flex flex-wrap gap-3">
@@ -102,7 +99,7 @@ export default function SupportPage() {
               </Link>
               <Link
                 to="/parking-reservation/lookup"
-                className="inline-flex items-center gap-2 border border-white/30 hover:bg-white/10 text-white font-bold uppercase tracking-wider text-xs px-7 py-3.5 rounded-full transition-colors"
+                className="inline-flex items-center gap-2 border border-white/30 hover:bg-[#0e1c2a]/55 backdrop-blur-sm text-white font-bold uppercase tracking-wider text-xs px-7 py-3.5 rounded-full transition-colors"
               >
                 <Truck className="w-4 h-4" />
                 <TranslatedText text="Look Up Parking Reservation" />

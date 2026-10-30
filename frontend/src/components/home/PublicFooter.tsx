@@ -104,7 +104,7 @@ export function PublicFooter() {
               <div className="flex items-start gap-4">
                 <Phone className="w-10 h-10 text-white shrink-0 mt-1" />
                 <div>
-                  <p className="text-xs uppercase font-normal mb-2">
+                  <p className="text-xs text-white/80 uppercase font-normal mb-2">
                     <TranslatedText text="Call Toll Free" />
                   </p>
                   <Badge href={`tel:${contact.phone}`}>{contact.phone}</Badge>
@@ -115,7 +115,7 @@ export function PublicFooter() {
               <div className="flex items-start gap-4">
                 <Mail className="w-8 h-8 text-white shrink-0 mt-1" />
                 <div>
-                  <p className="text-xs uppercase font-normal mb-2">
+                  <p className="text-xs text-white/80 uppercase font-normal mb-2">
                     <TranslatedText text="Email" />
                   </p>
                   <Badge href={`mailto:${contact.email}`}>{contact.email}</Badge>
@@ -126,7 +126,7 @@ export function PublicFooter() {
               <div className="flex items-start gap-4">
                 <MessageCircle className="w-8 h-8 text-white shrink-0 mt-1" />
                 <div>
-                  <p className="text-xs uppercase font-normal mb-2">
+                  <p className="text-xs text-white/80 uppercase font-normal mb-2">
                     <TranslatedText text="Chat support" />
                   </p>
                   <Badge href={`tel:${chatPhone}`}>{chatPhone}</Badge>
@@ -137,7 +137,7 @@ export function PublicFooter() {
               <div>
                 {contact.address && (
                   <>
-                    <p className="text-xs uppercase font-bold mb-2">
+                    <p className="text-xs text-white/80 uppercase font-bold mb-2">
                       <TranslatedText text="Physical address" />
                     </p>
                     <p className="text-sm text-white/90">{contact.address}</p>
@@ -145,7 +145,7 @@ export function PublicFooter() {
                 )}
                 {contact.workingHours && (
                   <>
-                    <p className="text-xs uppercase font-bold mt-4 mb-2 inline-flex items-center gap-2">
+                    <p className="text-xs text-white/80 uppercase font-bold mt-4 mb-2 inline-flex items-center gap-2">
                       <Clock className="w-3.5 h-3.5" />
                       <TranslatedText text="Working hours" />
                     </p>
