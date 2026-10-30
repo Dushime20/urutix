@@ -1,26 +1,44 @@
 import {
-  BadRequestException,
   Controller,
   Get,
+  Header,
   Query,
   Request,
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import * as express from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ReportsAccessGuard } from './reports-access.guard';
 import { TenantGuard } from '../auth/guards/tenant.guard';
-import { TenantReportCategory, TenantReportsService } from './tenant-reports.service';
+import {
+  TenantReportQuery,
+  TenantReportsService,
+  ReportScope,
+} from './tenant-reports.service';
+
+type ReportRequest = {
+  user?: {
+    userId?: string;
+    id?: string;
+    role?: string;
+    tenantId?: string;
+    email?: string;
+  };
+};
 
 @ApiTags('Reports')
 @ApiBearerAuth('JWT-auth')
 @Controller('reports')
-@UseGuards(JwtAuthGuard, TenantGuard)
+@UseGuards(JwtAuthGuard, TenantGuard, ReportsAccessGuard)
 export class ReportsController {
-  constructor(private readonly reports: TenantReportsService) {}
+  constructor(
+    private readonly reports: TenantReportsService,
+    private readonly access: ReportsAccessGuard,
+  ) {}
 
-  private scope(req: { user?: { userId?: string; id?: string; role?: string; tenantId?: string; email?: string } }) {
+  private scope(req: ReportRequest): ReportScope {
     return {
       userId: req.user?.userId || req.user?.id || '',
       role: req.user?.role || '',
@@ -29,35 +47,33 @@ export class ReportsController {
     };
   }
 
-  @Get()
-  @ApiOperation({ summary: 'Preview a role-scoped report for the current user' })
-  @ApiQuery({ name: 'category', required: true })
-  @ApiQuery({ name: 'status', required: false })
-  @ApiQuery({ name: 'priority', required: false })
-  @ApiQuery({ name: 'search', required: false })
-  @ApiQuery({ name: 'dateFrom', required: false })
-  @ApiQuery({ name: 'dateTo', required: false })
-  async preview(
-    @Request() req: { user?: { userId?: string; id?: string; role?: string; tenantId?: string; email?: string } },
-    @Query('category') category: TenantReportCategory,
-    @Query('status') status?: string,
-    @Query('priority') priority?: string,
-    @Query('search') search?: string,
-    @Query('dateFrom') dateFrom?: string,
-    @Query('dateTo') dateTo?: string,
-  ) {
-    if (!category) {
-      throw new BadRequestException('category is required');
-    }
+  @Header('Cache-Control', 'no-store')
+  @Get('catalog')
+  @ApiOperation({
+    summary: 'Available report categories for the authenticated role',
+  })
+  async catalog(@Request() req: ReportRequest) {
     const scope = this.scope(req);
-    const data = await this.reports.generate(scope.tenantId, {
-      category,
-      status,
-      priority,
-      search,
-      dateFrom,
-      dateTo,
-    }, scope);
+    return {
+      success: true,
+      data: await this.access.filterCatalog(
+        scope,
+        this.reports.catalog(scope.role),
+      ),
+    };
+  }
+
+  @Header('Cache-Control', 'no-store')
+  @Get()
+  @ApiOperation({
+    summary: 'Paginated role-scoped report with filtered summaries',
+  })
+  async preview(
+    @Request() req: ReportRequest,
+    @Query() query: TenantReportQuery,
+  ) {
+    const scope = this.scope(req);
+    const data = await this.reports.generate(scope.tenantId, query, scope);
     return {
       success: true,
       statusCode: 200,
@@ -67,37 +83,45 @@ export class ReportsController {
     };
   }
 
+  @Header('Cache-Control', 'no-store')
+  @Get('export-data')
+  @ApiOperation({
+    summary:
+      'Fresh authorized report data for PDF, Excel and printing; maximum 5000 records',
+  })
+  async exportData(
+    @Request() req: ReportRequest,
+    @Query() query: TenantReportQuery,
+  ) {
+    const scope = this.scope(req);
+    return {
+      success: true,
+      data: await this.reports.generate(scope.tenantId, query, scope, true),
+    };
+  }
+
   @Get('export')
-  @ApiOperation({ summary: 'Download a role-scoped report as CSV' })
+  @ApiOperation({
+    summary: 'Download a fresh role-scoped report as CSV; maximum 5000 records',
+  })
   async export(
     @Res() res: express.Response,
-    @Request() req: { user?: { userId?: string; id?: string; role?: string; tenantId?: string; email?: string } },
-    @Query('category') category: TenantReportCategory,
-    @Query('status') status?: string,
-    @Query('priority') priority?: string,
-    @Query('search') search?: string,
-    @Query('dateFrom') dateFrom?: string,
-    @Query('dateTo') dateTo?: string,
+    @Request() req: ReportRequest,
+    @Query() query: TenantReportQuery,
   ): Promise<void> {
-    if (!category) {
-      throw new BadRequestException('category is required');
-    }
     const scope = this.scope(req);
-    const report = await this.reports.generate(scope.tenantId, {
-      category,
-      status,
-      priority,
-      search,
-      dateFrom,
-      dateTo,
-    }, scope);
-    const csv = this.reports.toCsv(report);
-    const stamp = new Date().toISOString().split('T')[0];
-    const filename = `${report.title.toLowerCase().replace(/\s+/g, '-')}-${stamp}.csv`;
+    const report = await this.reports.generate(
+      scope.tenantId,
+      query,
+      scope,
+      true,
+    );
+    const filename = `${report.category}-${report.metadata.generatedAt.slice(0, 10)}.csv`;
     res.set({
       'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': `attachment; filename="${filename}"`,
+      'Cache-Control': 'no-store',
     });
-    res.send(csv);
+    res.send('\uFEFF' + this.reports.toCsv(report));
   }
 }

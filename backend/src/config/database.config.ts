@@ -16,6 +16,7 @@
  *    are logged in production so the log stream stays actionable.
  */
 
+import { RevenueRecord } from '../entities/revenue-record.entity';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 // ── Core domain entities ────────────────────────────────────────────────────
@@ -198,6 +199,7 @@ const isProduction = process.env.NODE_ENV === 'production';
  * is far preferable to a silent runtime error when the entity is first queried.
  */
 export const ALL_ENTITIES = [
+  RevenueRecord,
   // Auth & Users
   User, UserProfile, UserSession, UserRating, UserReward, UserScore,
   UserPermissionOverride,

@@ -28,21 +28,48 @@ import { LoanRequest } from '../../entities/loan-request.entity';
 import { LoanRepayment } from '../../entities/loan-repayment.entity';
 import { CustomsInspection } from '../../entities/customs-inspection.entity';
 import { TenantReportsService } from './tenant-reports.service';
+import { ReportsAccessGuard } from './reports-access.guard';
 import { ReportsController } from './reports.controller';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Load, Truck, User, Trip, Payment, Bid, CreditAccount, CreditTransaction,
-      EmailTemplate, BulkEmailLog, Tenant, Driver, ParkingReservation, Invoice, DisputeV2,
-      LoanRequest, LoanRepayment, CustomsInspection,
+      Load,
+      Truck,
+      User,
+      Trip,
+      Payment,
+      Bid,
+      CreditAccount,
+      CreditTransaction,
+      EmailTemplate,
+      BulkEmailLog,
+      Tenant,
+      Driver,
+      ParkingReservation,
+      Invoice,
+      DisputeV2,
+      LoanRequest,
+      LoanRepayment,
+      CustomsInspection,
     ]),
     EnhancedAuthModule,
     SubscriptionModule,
     NotificationsModule,
   ],
-  controllers: [TenantDashboardController, PartnerBillingController, TenantBulkEmailController, ReportsController],
-  providers: [TenantDashboardService, TenantReportsService, BulkEmailService, AIEmailAssistantService],
+  controllers: [
+    TenantDashboardController,
+    PartnerBillingController,
+    TenantBulkEmailController,
+    ReportsController,
+  ],
+  providers: [
+    ReportsAccessGuard,
+    TenantDashboardService,
+    TenantReportsService,
+    BulkEmailService,
+    AIEmailAssistantService,
+  ],
   exports: [TenantDashboardService, TenantReportsService],
 })
-export class TenantDashboardModule { }
+export class TenantDashboardModule {}

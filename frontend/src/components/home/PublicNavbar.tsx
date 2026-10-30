@@ -100,6 +100,7 @@ function segmentActive(match: (typeof SEGMENT_TABS)[number]["match"], pathname: 
 }
 
 export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean }) {
+  const [scrolled, setScrolled] = useState(() => window.scrollY > 24)
   const [open, setOpen] = useState(false)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -112,11 +113,20 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
   const dashboardPath = user ? (ROLE_DASHBOARD[user.role] ?? "/dashboard") : null
   const isHome = location.pathname === "/"
   const overlay = isHome && !alwaysSolid
+  const transparent = overlay && !scrolled
+  const compact = overlay && scrolled
   const parkingActive = location.pathname.startsWith("/parking-reservation")
   const audiencesActive = location.pathname.startsWith("/who-its-for")
   const howItWorksActive = location.pathname.startsWith("/how-it-works")
-  const platformActive = location.pathname.startsWith("/platform") || location.pathname.startsWith("/marketplace")
+  const platformActive = isHome || location.pathname.startsWith("/platform") || location.pathname.startsWith("/marketplace")
   const financeActive = location.pathname.startsWith("/finance")
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24)
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
 
   useEffect(() => {
     if (!open) return
@@ -179,19 +189,19 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-50 ${overlay ? "" : "bg-primary-950"}`}>
-        {overlay && (
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-200 ${transparent ? "" : "bg-[#0e1c2a]"}`}>
+        {transparent && (
           <div
             className="absolute inset-x-0 top-0 h-44 pointer-events-none bg-gradient-to-b from-primary-950/96 to-transparent"
             aria-hidden
           />
         )}
 
-        <div className="relative px-[4%] lg:px-[5%] pt-3 pb-2">
-          <div className="flex items-center justify-between gap-3">
+        <div className={`relative px-[4%] lg:px-[5%] pt-3 pb-2 ${compact ? "lg:h-[60px] lg:pt-0 lg:pb-0 lg:flex lg:items-center" : ""}`}>
+          <div className="flex w-full items-center justify-between gap-3">
             <nav className="hidden md:flex items-center" aria-label="Segments">
               {SEGMENT_TABS.map((tab) => {
-                const active = segmentActive(tab.match, location.pathname)
+                const active = segmentActive(tab.match, location.pathname) || (isHome && tab.match === "platform")
                 return (
                   <Link
                     key={tab.label}
@@ -269,7 +279,7 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
 
         <div className="relative mx-[2.5%] lg:mx-[2.34%]">
           <div className="bg-white rounded shadow-[0_4px_16px_rgba(0,0,0,0.08)] overflow-visible">
-            <div className="flex items-center justify-between h-14 lg:h-20 px-3 sm:px-5 lg:px-7">
+            <div className={`flex items-center justify-between h-14 ${compact ? "lg:h-[70px]" : "lg:h-20"} px-3 sm:px-5 lg:px-7`}>
               <Link to="/" className="shrink-0">
                 <img src={logoUrutiX} alt="UrutiX" className="h-9 sm:h-11 lg:h-12 w-auto object-contain" />
               </Link>
@@ -321,7 +331,7 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
                     </Link>
                     <Link
                       to="/auth"
-                      className="inline-flex items-center h-10 px-5 border-2 border-[#202020] text-[#202020] text-[13px] font-medium uppercase rounded-full hover:bg-primary-500 hover:border-primary-500 hover:text-white transition-colors"
+                      className={`inline-flex items-center ${compact ? "h-9 px-4" : "h-10 px-5"} border-2 border-[#202020] text-[#202020] text-[13px] font-medium uppercase rounded-full hover:bg-primary-500 hover:border-primary-500 hover:text-white transition-colors`}
                     >
                       <TranslatedText text="Get started" />
                     </Link>
