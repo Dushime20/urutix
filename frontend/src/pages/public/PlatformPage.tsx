@@ -102,21 +102,30 @@ export default function PlatformPage() {
       <PublicNavbar alwaysSolid />
 
       {/* Hero */}
-      <section className="relative bg-primary-950 text-white py-16 lg:py-24 overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-20"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=1920&q=80')" }}
+      <section aria-labelledby="platform-hero-title" className="relative isolate bg-[#0e1c2a] text-white py-16 lg:py-24 overflow-hidden">
+        <img
+          src="https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=1920&q=80"
+          alt=""
+          decoding="async"
+          loading="eager"
+          className="absolute inset-0 -z-20 h-full w-full object-cover object-center"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-950 via-primary-950/90 to-primary-900/70" />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 -z-10"
+          style={{ background: "linear-gradient(90deg, rgba(14,28,42,0.98) 0%, rgba(14,28,42,0.9) 42%, rgba(14,28,42,0.58) 65%, rgba(14,28,42,0.18) 100%)" }}
+        />
+        <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[#0e1c2a]/60 lg:hidden" />
+        <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-[#0e1c2a]/60 via-transparent to-transparent" />
         <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <p className="text-primary-400 text-xs font-bold uppercase tracking-[0.2em] mb-3">
+            <p className="text-sky-300 text-xs font-bold uppercase tracking-[0.2em] mb-4">
               <TranslatedText text="UrutiX Platform" />
             </p>
-            <h1 className="font-manrope text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight mb-5">
+            <h1 id="platform-hero-title" className="font-manrope text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-[1.12] mb-6 drop-shadow-sm">
               <TranslatedText text="Everything needed to run modern road freight in one core" />
             </h1>
-            <p className="text-primary-100/90 text-base sm:text-lg leading-relaxed mb-8">
+            <p className="max-w-2xl text-slate-100 text-base sm:text-lg leading-relaxed mb-8">
               <TranslatedText text="Marketplace allocation, fleet management, live GPS visibility, customs checkpoints, corridor parking, and embedded finance—connected natively instead of bolted on." />
             </p>
             <div className="flex flex-wrap gap-2.5">
@@ -126,7 +135,7 @@ export default function PlatformPage() {
                   <a
                     key={p.id}
                     href={`#${p.id}`}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/10 hover:bg-primary-500 text-white text-xs font-bold uppercase tracking-wider border border-white/15 transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#0e1c2a]/55 backdrop-blur-sm hover:bg-primary-500 text-white text-xs font-bold uppercase tracking-wider border border-white/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0e1c2a]"
                   >
                     <Icon className="w-4 h-4" />
                     <TranslatedText text={p.badge} />
