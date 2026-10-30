@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { DataSource } = require('typeorm');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 const d = new DataSource({
     type: 'postgres',

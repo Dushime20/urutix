@@ -20,7 +20,8 @@ RUN apk add --no-cache python3 make g++ cairo-dev jpeg-dev pango-dev giflib-dev
 
 COPY package*.json ./
 # ci installs exactly what package-lock.json specifies — reproducible builds
-RUN npm ci --ignore-scripts=false
+# --ignore-scripts skips legacy native bcrypt compilation (codebase uses pure-JS bcryptjs)
+RUN npm ci --ignore-scripts
 
 # ── Stage 2: Build TypeScript ─────────────────────────────────────────────────
 FROM node:${NODE_VERSION} AS builder

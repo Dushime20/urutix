@@ -1,5 +1,5 @@
 const { DataSource } = require('typeorm');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const AppDataSource = new DataSource({

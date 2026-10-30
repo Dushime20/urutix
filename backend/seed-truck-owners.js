@@ -1,5 +1,5 @@
 const { DataSource } = require('typeorm');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 // Load environment variables
 require('dotenv').config();

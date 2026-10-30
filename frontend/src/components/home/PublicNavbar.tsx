@@ -43,28 +43,28 @@ const ROLE_DASHBOARD: Record<string, string> = {
 }
 
 const SEGMENT_TABS = [
-  { label: "Marketplace", to: "/", match: "home" as const },
+  { label: "Marketplace", to: "/marketplace", match: "marketplace" as const },
   { label: "Parking", to: "/parking-reservation", match: "parking" as const },
-  { label: "Finance", to: "/#finance", match: "finance" as const },
-  { label: "Platform", to: "/#platform", match: "platform" as const },
-  { label: "Support", to: "/#contact", match: "support" as const },
+  { label: "Finance", to: "/finance", match: "finance" as const },
+  { label: "Platform", to: "/platform", match: "platform" as const },
+  { label: "Support", to: "/support", match: "support" as const },
 ]
 
 const AUDIENCE_ITEMS = [
-  { label: "Cargo owners", href: "#audiences", icon: Package, desc: "Post loads and track delivery" },
-  { label: "Fleet owners", href: "#audiences", icon: Truck, desc: "Keep trucks loaded" },
-  { label: "Drivers", href: "#audiences", icon: UserRound, desc: "Clear missions and earnings" },
-  { label: "Brokers", href: "#audiences", icon: HeartHandshake, desc: "Close deals with visibility" },
-  { label: "Lenders", href: "#finance", icon: Landmark, desc: "Finance real freight work" },
+  { label: "Cargo owners", to: "/who-its-for#cargo", icon: Package, desc: "Post loads and track delivery" },
+  { label: "Fleet owners", to: "/who-its-for#fleet", icon: Truck, desc: "Keep trucks loaded" },
+  { label: "Drivers", to: "/who-its-for#driver", icon: UserRound, desc: "Clear missions and earnings" },
+  { label: "Brokers", to: "/who-its-for#broker", icon: HeartHandshake, desc: "Close deals with visibility" },
+  { label: "Lenders", to: "/who-its-for#lender", icon: Landmark, desc: "Finance real freight work" },
 ]
 
 const PLATFORM_ITEMS = [
-  { label: "Smart matching", href: "#platform", icon: Route },
-  { label: "Bidding & auctions", href: "#platform", icon: Gavel },
-  { label: "Live visibility", href: "#platform", icon: Radio },
-  { label: "Embedded finance", href: "#finance", icon: Wallet },
-  { label: "White-label marketplace", href: "#marketplace", icon: Building2 },
-  { label: "Trusted operations", href: "#platform", icon: ShieldCheck },
+  { label: "Smart matching", to: "/platform#smart-matching", icon: Route },
+  { label: "Bidding & auctions", to: "/platform#bidding-auctions", icon: Gavel },
+  { label: "Live visibility", to: "/platform#live-visibility", icon: Radio },
+  { label: "Embedded finance", to: "/finance", icon: Wallet },
+  { label: "White-label marketplace", to: "/marketplace", icon: Building2 },
+  { label: "Trusted operations", to: "/platform#trusted-operations", icon: ShieldCheck },
 ]
 
 const PARKING_LINKS = [
@@ -73,23 +73,30 @@ const PARKING_LINKS = [
 ]
 
 const SEARCH_ITEMS = [
-  { label: "Who it's for", href: "/#audiences" },
-  { label: "How it works", href: "/#how-it-works" },
-  { label: "Platform", href: "/#platform" },
-  { label: "Finance", href: "/#finance" },
-  { label: "White-label marketplace", href: "/#marketplace" },
-  { label: "Contact", href: "/#contact" },
+  { label: "Home", href: "/" },
+  { label: "Who it's for", href: "/who-its-for" },
+  { label: "Cargo owners", href: "/who-its-for#cargo" },
+  { label: "Fleet owners", href: "/who-its-for#fleet" },
+  { label: "Drivers", href: "/who-its-for#driver" },
+  { label: "Brokers", href: "/who-its-for#broker" },
+  { label: "Lenders", href: "/who-its-for#lender" },
+  { label: "How it works", href: "/how-it-works" },
+  { label: "Platform", href: "/platform" },
+  { label: "Finance", href: "/finance" },
+  { label: "White-label marketplace", href: "/marketplace" },
+  { label: "Support & Contact", href: "/support" },
   { label: "Reserve Truck Parking", href: "/parking-reservation" },
   { label: "Look up reservation", href: "/parking-reservation/lookup" },
   { label: "Sign in", href: "/auth" },
 ]
 
-function segmentActive(match: (typeof SEGMENT_TABS)[number]["match"], pathname: string, hash: string) {
+function segmentActive(match: (typeof SEGMENT_TABS)[number]["match"], pathname: string) {
+  if (match === "marketplace") return pathname.startsWith("/marketplace")
   if (match === "parking") return pathname.startsWith("/parking-reservation")
-  if (match === "finance") return pathname === "/" && hash === "#finance"
-  if (match === "platform") return pathname === "/" && (hash === "#platform" || hash === "#marketplace")
-  if (match === "support") return pathname === "/" && hash === "#contact"
-  return pathname === "/" && !["#finance", "#platform", "#marketplace", "#contact"].includes(hash)
+  if (match === "finance") return pathname.startsWith("/finance")
+  if (match === "platform") return pathname.startsWith("/platform")
+  if (match === "support") return pathname.startsWith("/support")
+  return false
 }
 
 export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean }) {
@@ -97,7 +104,6 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const [activeHref, setActiveHref] = useState("#home")
   const menuTimeout = useRef<number | null>(null)
   const searchRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -107,27 +113,10 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
   const isHome = location.pathname === "/"
   const overlay = isHome && !alwaysSolid
   const parkingActive = location.pathname.startsWith("/parking-reservation")
-  const pageHash = isHome ? (activeHref.startsWith("#") ? activeHref : location.hash) : location.hash
-
-  useEffect(() => {
-    if (!isHome) return
-    const ids = ["home", "audiences", "how-it-works", "platform", "finance", "marketplace", "contact"]
-    const elements = ids
-      .map((id) => document.getElementById(id))
-      .filter((el): el is HTMLElement => !!el)
-    if (!elements.length) return
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)
-        if (visible[0]?.target?.id) setActiveHref(`#${visible[0].target.id}`)
-      },
-      { rootMargin: "-20% 0px -55% 0px", threshold: [0.15, 0.35, 0.6] }
-    )
-    elements.forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
-  }, [isHome])
+  const audiencesActive = location.pathname.startsWith("/who-its-for")
+  const howItWorksActive = location.pathname.startsWith("/how-it-works")
+  const platformActive = location.pathname.startsWith("/platform") || location.pathname.startsWith("/marketplace")
+  const financeActive = location.pathname.startsWith("/finance")
 
   useEffect(() => {
     if (!open) return
@@ -168,8 +157,6 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
     if (searchOpen) searchInputRef.current?.focus()
   }, [searchOpen])
 
-  const sectionHref = (hash: string) => (isHome ? hash : `/${hash}`)
-
   const openMega = (id: string) => {
     if (menuTimeout.current) window.clearTimeout(menuTimeout.current)
     setOpenMenu(id)
@@ -204,7 +191,7 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
           <div className="flex items-center justify-between gap-3">
             <nav className="hidden md:flex items-center" aria-label="Segments">
               {SEGMENT_TABS.map((tab) => {
-                const active = segmentActive(tab.match, location.pathname, pageHash)
+                const active = segmentActive(tab.match, location.pathname)
                 return (
                   <Link
                     key={tab.label}
@@ -283,50 +270,38 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
         <div className="relative mx-[2.5%] lg:mx-[2.34%]">
           <div className="bg-white rounded shadow-[0_4px_16px_rgba(0,0,0,0.08)] overflow-visible">
             <div className="flex items-center justify-between h-14 lg:h-20 px-3 sm:px-5 lg:px-7">
-              <Link to="/" className="shrink-0" onClick={() => setActiveHref("#home")}>
+              <Link to="/" className="shrink-0">
                 <img src={logoUrutiX} alt="UrutiX" className="h-9 sm:h-11 lg:h-12 w-auto object-contain" />
               </Link>
 
               <nav className="hidden lg:flex items-center gap-1" aria-label="Primary">
                 <div className="relative" onMouseEnter={() => openMega("audiences")} onMouseLeave={closeMegaSoon}>
-                  <a href={sectionHref("#audiences")} className={navItemClass(isHome && activeHref === "#audiences")}>
+                  <Link to="/who-its-for" className={navItemClass(audiencesActive)}>
                     <TranslatedText text="Who it's for" />
                     <ChevronDown className={`w-3.5 h-3.5 ${openMenu === "audiences" ? "rotate-180" : ""}`} />
-                  </a>
+                  </Link>
                 </div>
-                <a
-                  href={sectionHref("#how-it-works")}
-                  onClick={() => setActiveHref("#how-it-works")}
-                  className={navItemClass(isHome && activeHref === "#how-it-works")}
-                >
+                <Link to="/how-it-works" className={navItemClass(howItWorksActive)}>
                   <TranslatedText text="How it works" />
-                </a>
+                </Link>
                 <div className="relative" onMouseEnter={() => openMega("platform")} onMouseLeave={closeMegaSoon}>
-                  <a
-                    href={sectionHref("#platform")}
-                    className={navItemClass(isHome && (activeHref === "#platform" || activeHref === "#marketplace"))}
-                  >
+                  <Link to="/platform" className={navItemClass(platformActive)}>
                     <TranslatedText text="Platform" />
                     <ChevronDown className={`w-3.5 h-3.5 ${openMenu === "platform" ? "rotate-180" : ""}`} />
-                  </a>
+                  </Link>
                 </div>
-                <a
-                  href={sectionHref("#finance")}
-                  onClick={() => setActiveHref("#finance")}
-                  className={navItemClass(isHome && activeHref === "#finance")}
-                >
+                <Link to="/finance" className={navItemClass(financeActive)}>
                   <TranslatedText text="Finance" />
-                </a>
+                </Link>
                 <div className="relative" onMouseEnter={() => openMega("parking")} onMouseLeave={closeMegaSoon}>
-                  <button
-                    type="button"
-                    onClick={() => setOpenMenu((v) => (v === "parking" ? null : "parking"))}
+                  <Link
+                    to="/parking-reservation"
                     className={navItemClass(parkingActive)}
                     aria-expanded={openMenu === "parking"}
                   >
                     <TranslatedText text="Truck Parking" />
                     <ChevronDown className={`w-3.5 h-3.5 ${openMenu === "parking" ? "rotate-180" : ""}`} />
-                  </button>
+                  </Link>
                 </div>
               </nav>
 
@@ -383,9 +358,9 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
                         {AUDIENCE_ITEMS.map((item) => {
                           const Icon = item.icon
                           return (
-                            <a
+                            <Link
                               key={item.label}
-                              href={sectionHref(item.href)}
+                              to={item.to}
                               onClick={() => setOpenMenu(null)}
                               className="flex items-start gap-3 py-2 hover:text-primary-500"
                             >
@@ -398,7 +373,7 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
                                   <TranslatedText text={item.desc} />
                                 </span>
                               </span>
-                            </a>
+                            </Link>
                           )
                         })}
                       </div>
@@ -408,15 +383,15 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
                         {PLATFORM_ITEMS.map((item) => {
                           const Icon = item.icon
                           return (
-                            <a
+                            <Link
                               key={item.label}
-                              href={sectionHref(item.href)}
+                              to={item.to}
                               onClick={() => setOpenMenu(null)}
                               className="flex items-center gap-3 py-2 text-[15px] font-medium text-[#202020] hover:text-primary-500"
                             >
                               <Icon className="w-4 h-4 text-primary-500" />
                               <TranslatedText text={item.label} />
-                            </a>
+                            </Link>
                           )
                         })}
                       </div>
@@ -465,26 +440,45 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
                         <TranslatedText text={tab.label} />
                       </Link>
                     ))}
+                    <Link
+                      to="/who-its-for"
+                      onClick={() => setOpen(false)}
+                      className="block py-3 border-b border-neutral-100 text-sm font-semibold text-[#202020]"
+                    >
+                      <TranslatedText text="Who it's for" />
+                    </Link>
                     {AUDIENCE_ITEMS.map((item) => (
-                      <a
+                      <Link
                         key={item.label}
-                        href={sectionHref(item.href)}
+                        to={item.to}
                         onClick={() => setOpen(false)}
-                        className="flex items-center gap-3 py-3 border-b border-neutral-100 text-sm font-medium text-[#202020]"
+                        className="flex items-center gap-3 py-2.5 pl-3 border-b border-neutral-100 text-sm font-medium text-[#202020]"
                       >
                         <item.icon className="w-4 h-4 text-primary-500" />
                         <TranslatedText text={item.label} />
-                      </a>
+                      </Link>
                     ))}
-                    <a href={sectionHref("#how-it-works")} onClick={() => setOpen(false)} className="block py-3 border-b border-neutral-100 text-sm font-medium">
+                    <Link
+                      to="/how-it-works"
+                      onClick={() => setOpen(false)}
+                      className="block py-3 border-b border-neutral-100 text-sm font-medium"
+                    >
                       <TranslatedText text="How it works" />
-                    </a>
-                    <a href={sectionHref("#platform")} onClick={() => setOpen(false)} className="block py-3 border-b border-neutral-100 text-sm font-medium">
+                    </Link>
+                    <Link
+                      to="/platform"
+                      onClick={() => setOpen(false)}
+                      className="block py-3 border-b border-neutral-100 text-sm font-medium"
+                    >
                       <TranslatedText text="Platform" />
-                    </a>
-                    <a href={sectionHref("#finance")} onClick={() => setOpen(false)} className="block py-3 border-b border-neutral-100 text-sm font-medium">
+                    </Link>
+                    <Link
+                      to="/finance"
+                      onClick={() => setOpen(false)}
+                      className="block py-3 border-b border-neutral-100 text-sm font-medium"
+                    >
                       <TranslatedText text="Finance" />
-                    </a>
+                    </Link>
                     {PARKING_LINKS.map((item) => (
                       <Link
                         key={item.to}

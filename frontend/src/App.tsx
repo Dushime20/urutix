@@ -103,6 +103,12 @@ const FeatureControls = lazy(() => import('./pages/admin/FeatureControls'));
 const AdminParkingReservations = lazy(() => import('./pages/admin/AdminParkingReservations'));
 const ParkingReservationPage = lazy(() => import('./pages/ParkingReservation'));
 const ParkingReservationLookupPage = lazy(() => import('./pages/ParkingReservationLookup'));
+const WhoItsForPage = lazy(() => import('./pages/public/WhoItsForPage'));
+const HowItWorksPage = lazy(() => import('./pages/public/HowItWorksPage'));
+const PlatformPage = lazy(() => import('./pages/public/PlatformPage'));
+const FinancePage = lazy(() => import('./pages/public/FinancePage'));
+const MarketplacePage = lazy(() => import('./pages/public/MarketplacePage'));
+const SupportPage = lazy(() => import('./pages/public/SupportPage'));
 const ParkingManagementWorkspace = lazy(() => import('./components/parking/ParkingManagementWorkspace'));
 const ParkingReservationsDashboard = lazy(() => import('./pages/parking/ParkingReservationsDashboard'));
 const ParkingFeeSettings = lazy(() => import('./pages/parking/ParkingFeeSettings'));
@@ -259,7 +265,7 @@ const PageLoadingFallback = () => (
 
 function AppUiShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const isMarketing = pathname === '/';
+  const isMarketing = ['/', '/who-its-for', '/how-it-works', '/platform', '/finance', '/marketplace', '/support', '/parking-reservation', '/parking-reservation/lookup'].includes(pathname);
   return (
     <div className="contents" {...(!isMarketing ? { 'data-app-ui': '' } : {})}>
       {children}
@@ -285,6 +291,12 @@ function App() {
                 <Suspense fallback={<PageLoadingFallback />}>
                   <Routes>
                     <Route path="/" element={<Home />} />
+                    <Route path="/who-its-for" element={<WhoItsForPage />} />
+                    <Route path="/how-it-works" element={<HowItWorksPage />} />
+                    <Route path="/platform" element={<PlatformPage />} />
+                    <Route path="/finance" element={<FinancePage />} />
+                    <Route path="/marketplace" element={<MarketplacePage />} />
+                    <Route path="/support" element={<SupportPage />} />
                     <Route path="/parking-reservation" element={<ParkingReservationPage />} />
                     <Route path="/parking-reservation/lookup" element={<ParkingReservationLookupPage />} />
                     <Route path="/auth" element={<Auth />} />
