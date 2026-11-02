@@ -100,6 +100,96 @@ describe('Role-scoped reporting (real PostgreSQL query builder; mocked database 
   afterEach(() => jest.restoreAllMocks());
 
   it.each([
+    { pickupLocation: undefined, deliveryLocation: null },
+    { pickupLocation: {}, deliveryLocation: { name: '' } },
+  ])(
+    'uses cargo addresses when trip locations are empty: %j',
+    async (locations) => {
+      jest.spyOn(SelectQueryBuilder.prototype, 'getMany').mockResolvedValue([
+        {
+          id: 'trip-1',
+          ...locations,
+          load: {
+            origin: { address: 'Kigali warehouse', city: 'Kigali' },
+            destination: { city: 'Musanze' },
+          },
+        },
+      ] as any);
+
+      const report = await reports.generate(
+        tenant,
+        { category: 'trips' },
+        principal(),
+      );
+
+      expect(report.headers).toEqual(
+        expect.arrayContaining(['Origin', 'Destination']),
+      );
+      expect(report.rows[0]).toMatchObject({
+        Origin: 'Kigali warehouse',
+        Destination: 'Musanze',
+      });
+    },
+  );
+
+  it('preserves explicit trip locations over cargo addresses', async () => {
+    jest.spyOn(SelectQueryBuilder.prototype, 'getMany').mockResolvedValue([
+      {
+        id: 'trip-1',
+        driver: { firstName: 'Alice', lastName: 'Mugisha' },
+        truck: { plateNumber: 'RAA 123 A' },
+        pickupLocation: { name: 'Trip pickup' },
+        deliveryLocation: { address: 'Trip delivery' },
+        load: {
+          title: 'Coffee shipment',
+          origin: { address: 'Cargo pickup' },
+          destination: { address: 'Cargo delivery' },
+        },
+      },
+    ] as any);
+
+    const report = await reports.generate(
+      tenant,
+      { category: 'trips' },
+      principal(),
+    );
+
+    expect(report.rows[0]).toMatchObject({
+      Origin: 'Trip pickup',
+      Destination: 'Trip delivery',
+      Driver: 'Alice Mugisha',
+      Truck: 'RAA 123 A',
+      Cargo: 'Coffee shipment',
+    });
+  });
+
+  it('groups trip participants by identity while displaying names and plates', async () => {
+    jest
+      .spyOn(SelectQueryBuilder.prototype, 'getRawMany')
+      .mockImplementation(async function () {
+        const sql = this.getQuery();
+        if (sql.includes('MAX(') && sql.includes('firstName'))
+          return [
+            { key: uid, label: 'Alice Mugisha', count: '7', completed: '6' },
+          ];
+        if (sql.includes('MAX(') && sql.includes('plateNumber'))
+          return [
+            { key: other, label: 'RAA 123 A', count: '7', completed: '6' },
+          ];
+        return [];
+      });
+    const result = await reports.generate(
+      tenant,
+      { category: 'trips' },
+      principal(),
+    );
+    expect(result.summary.breakdowns).toEqual([
+      { dimension: 'Driver', key: 'Alice Mugisha', count: 7, completed: 6 },
+      { dimension: 'Truck', key: 'RAA 123 A', count: 7, completed: 6 },
+    ]);
+  });
+
+  it.each([
     'SUPER_ADMIN',
     'ADMIN',
     'TENANT_ADMIN',

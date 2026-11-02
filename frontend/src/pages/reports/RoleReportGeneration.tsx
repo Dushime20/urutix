@@ -302,6 +302,12 @@ const RoleReportGeneration: React.FC = () => {
   const [driverId, setDriverId] = useState("");
   const [cargoOwnerId, setCargoOwnerId] = useState("");
   const [preset, setPreset] = useState("all");
+  const dateError =
+    preset === "date" && !dateFrom
+      ? "Choose a report date."
+      : dateFrom && dateTo && dateFrom > dateTo
+        ? "Start date must be on or before the end date."
+        : "";
   const filters = {
     category: reportId,
     status: status || undefined,
@@ -332,6 +338,12 @@ const RoleReportGeneration: React.FC = () => {
   ]);
   const applyPreset = (value: string) => {
     setPreset(value);
+    if (value === "date") {
+      const selected = dateFrom || dateTo;
+      setDateFrom(selected);
+      setDateTo(selected);
+      return;
+    }
     if (value === "custom") return;
     if (value === "all") {
       setDateFrom("");
@@ -381,7 +393,9 @@ const RoleReportGeneration: React.FC = () => {
       filters,
       pageNumber,
     ],
-    enabled: Boolean(user?.id && catalog.some((r) => r.id === reportId)),
+    enabled: Boolean(
+      user?.id && catalog.some((r) => r.id === reportId) && !dateError,
+    ),
     queryFn: () =>
       reportsApi.getMyReport({ ...filters, page: pageNumber, pageSize: 50 }),
     staleTime: 0,
@@ -405,7 +419,7 @@ const RoleReportGeneration: React.FC = () => {
   );
 
   const handleGenerate = async (requestedFormat: ExportFormat = format) => {
-    if (!def) return;
+    if (!def || dateError) return;
     const printWindow =
       requestedFormat === "print" ? window.open("", "_blank") : null;
     try {
@@ -554,29 +568,122 @@ const RoleReportGeneration: React.FC = () => {
               Filters · {def.label}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <select
-              aria-label="Reporting period (UTC)"
-              value={preset}
-              onChange={(e) => applyPreset(e.target.value)}
-              className="rounded-xl border p-2 text-xs dark:bg-slate-700"
+          <fieldset className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/40">
+            <legend className="px-1 text-sm font-bold text-[#2c5173] dark:text-slate-200">
+              <Calendar className="mr-1.5 inline h-4 w-4" />
+              Report dates
+            </legend>
+            <p
+              id="report-date-help"
+              className="mb-3 text-xs text-slate-500 dark:text-slate-400"
             >
-              {[
-                ["all", "All time"],
-                ["today", "Today"],
-                ["yesterday", "Yesterday"],
-                ["7", "Last 7 days"],
-                ["30", "Last 30 days"],
-                ["month", "This month"],
-                ["previous", "Previous month"],
-                ["year", "This year"],
-                ["custom", "Custom range"],
-              ].map(([v, label]) => (
-                <option key={v} value={v}>
-                  {label} (UTC)
-                </option>
-              ))}
-            </select>
+              Choose a specific day or a date range. Both dates include the full
+              day (UTC). The same dates apply to the preview and every export.
+            </p>
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="flex flex-col gap-1 text-xs font-medium text-slate-600 dark:text-slate-300">
+                Reporting period
+                <select
+                  aria-label="Reporting period (UTC)"
+                  value={preset}
+                  onChange={(e) => applyPreset(e.target.value)}
+                  className="rounded-xl border p-2 text-xs dark:bg-slate-700"
+                >
+                  {[
+                    ["all", "All time"],
+                    ["today", "Today"],
+                    ["yesterday", "Yesterday"],
+                    ["7", "Last 7 days"],
+                    ["30", "Last 30 days"],
+                    ["month", "This month"],
+                    ["previous", "Previous month"],
+                    ["year", "This year"],
+                    ["date", "Specific date"],
+                    ["custom", "Custom range"],
+                  ].map(([v, label]) => (
+                    <option key={v} value={v}>
+                      {label} (UTC)
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {preset === "date" ? (
+                <label className="flex flex-col gap-1 text-xs font-medium text-slate-600 dark:text-slate-300">
+                  Report date
+                  <input
+                    type="date"
+                    aria-label="Report date"
+                    value={dateFrom}
+                    aria-describedby={
+                      dateError ? "report-date-error" : "report-date-help"
+                    }
+                    aria-invalid={Boolean(dateError)}
+                    onChange={(e) => {
+                      setDateFrom(e.target.value);
+                      setDateTo(e.target.value);
+                    }}
+                    className="rounded-xl border border-slate-200 bg-white p-2 text-xs dark:border-slate-600 dark:bg-slate-700"
+                  />
+                </label>
+              ) : (
+                <>
+                  <label className="flex flex-col gap-1 text-xs font-medium text-slate-600 dark:text-slate-300">
+                    Start date
+                    <input
+                      type="date"
+                      aria-label="Start date"
+                      value={dateFrom}
+                      max={dateTo || undefined}
+                      aria-invalid={Boolean(dateError)}
+                      aria-describedby={
+                        dateError ? "report-date-error" : "report-date-help"
+                      }
+                      onChange={(e) => {
+                        setDateFrom(e.target.value);
+                        setPreset("custom");
+                      }}
+                      className="rounded-xl border border-slate-200 bg-white p-2 text-xs dark:border-slate-600 dark:bg-slate-700"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs font-medium text-slate-600 dark:text-slate-300">
+                    End date
+                    <input
+                      type="date"
+                      aria-label="End date"
+                      value={dateTo}
+                      min={dateFrom || undefined}
+                      aria-invalid={Boolean(dateError)}
+                      aria-describedby={
+                        dateError ? "report-date-error" : "report-date-help"
+                      }
+                      onChange={(e) => {
+                        setDateTo(e.target.value);
+                        setPreset("custom");
+                      }}
+                      className="rounded-xl border border-slate-200 bg-white p-2 text-xs dark:border-slate-600 dark:bg-slate-700"
+                    />
+                  </label>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={() => applyPreset("all")}
+                className="rounded-xl px-3 py-2 text-xs font-semibold text-[#2c5173] dark:text-slate-200"
+              >
+                Clear dates
+              </button>
+            </div>
+            {dateError && (
+              <p
+                id="report-date-error"
+                role="alert"
+                className="mt-3 text-xs text-red-600 dark:text-red-400"
+              >
+                {dateError}
+              </p>
+            )}
+          </fieldset>
+          <div className="flex flex-wrap gap-2">
             {user?.role === "SUPER_ADMIN" && (
               <input
                 aria-label="Tenant ID or * for all tenants"
@@ -618,7 +725,13 @@ const RoleReportGeneration: React.FC = () => {
               />
             )}
             <button
-              disabled={generating || query.isFetching || query.isError}
+              disabled={
+                generating ||
+                query.isFetching ||
+                query.isError ||
+                !query.data ||
+                Boolean(dateError)
+              }
               onClick={() => handleGenerate("print")}
               className="rounded-xl border px-3 py-2 text-xs"
             >
@@ -668,32 +781,6 @@ const RoleReportGeneration: React.FC = () => {
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 pointer-events-none" />
               </div>
             )}
-            <label className="flex items-center gap-1.5 px-2 py-1.5 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl text-xs">
-              <Calendar className="w-3.5 h-3.5 text-gray-400" />
-              <span className="text-gray-400 font-medium">From</span>
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => {
-                  setDateFrom(e.target.value);
-                  setPreset("custom");
-                }}
-                className="bg-transparent outline-none dark:text-slate-200"
-              />
-            </label>
-            <label className="flex items-center gap-1.5 px-2 py-1.5 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl text-xs">
-              <Calendar className="w-3.5 h-3.5 text-gray-400" />
-              <span className="text-gray-400 font-medium">To</span>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => {
-                  setDateTo(e.target.value);
-                  setPreset("custom");
-                }}
-                className="bg-transparent outline-none dark:text-slate-200"
-              />
-            </label>
           </div>
 
           <div>
@@ -745,7 +832,11 @@ const RoleReportGeneration: React.FC = () => {
             <button
               onClick={() => handleGenerate()}
               disabled={
-                generating || query.isFetching || query.isError || !query.data
+                generating ||
+                query.isFetching ||
+                query.isError ||
+                !query.data ||
+                Boolean(dateError)
               }
               className="px-4 py-2.5 bg-[#2c5173] text-white rounded-xl text-xs font-bold hover:bg-[#1e3a54] disabled:opacity-50 flex items-center gap-1.5"
             >

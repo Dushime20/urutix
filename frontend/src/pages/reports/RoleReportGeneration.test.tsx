@@ -91,6 +91,107 @@ beforeEach(() => {
 });
 
 describe("Shared reporting page", () => {
+  it("applies a chosen date range to the preview and generated report", async () => {
+    open();
+    await screen.findByText("PREVIEW");
+    fireEvent.change(screen.getByLabelText("Start date"), {
+      target: { value: "2026-10-01" },
+    });
+    fireEvent.change(screen.getByLabelText("End date"), {
+      target: { value: "2026-10-31" },
+    });
+    await waitFor(() =>
+      expect(reportsApi.getMyReport).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          dateFrom: "2026-10-01",
+          dateTo: "2026-10-31",
+          page: 1,
+        }),
+      ),
+    );
+    const generate = screen.getByRole("button", {
+      name: "Generate Payments XLSX",
+    });
+    await waitFor(() => expect(generate).not.toBeDisabled());
+    fireEvent.click(generate);
+    await waitFor(() =>
+      expect(reportsApi.exportData).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dateFrom: "2026-10-01",
+          dateTo: "2026-10-31",
+        }),
+      ),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Clear dates" }));
+    await waitFor(() =>
+      expect(reportsApi.getMyReport).toHaveBeenLastCalledWith(
+        expect.objectContaining({ dateFrom: undefined, dateTo: undefined }),
+      ),
+    );
+  });
+
+  it("uses the same start and end date for a specific day", async () => {
+    open();
+    await screen.findByText("PREVIEW");
+    fireEvent.change(screen.getByLabelText("Reporting period (UTC)"), {
+      target: { value: "date" },
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent("Choose a report date");
+    expect(
+      screen.getByRole("button", { name: "Generate Payments XLSX" }),
+    ).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("Report date"), {
+      target: { value: "2026-10-25" },
+    });
+    await waitFor(() =>
+      expect(reportsApi.getMyReport).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          dateFrom: "2026-10-25",
+          dateTo: "2026-10-25",
+        }),
+      ),
+    );
+    const generate = screen.getByRole("button", {
+      name: "Generate Payments XLSX",
+    });
+    await waitFor(() => expect(generate).not.toBeDisabled());
+    fireEvent.click(generate);
+    await waitFor(() =>
+      expect(reportsApi.exportData).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dateFrom: "2026-10-25",
+          dateTo: "2026-10-25",
+        }),
+      ),
+    );
+  });
+
+  it("blocks reversed date ranges without sending an invalid report request", async () => {
+    open();
+    await screen.findByText("PREVIEW");
+    fireEvent.change(screen.getByLabelText("Start date"), {
+      target: { value: "2026-10-31" },
+    });
+    await waitFor(() =>
+      expect(reportsApi.getMyReport).toHaveBeenLastCalledWith(
+        expect.objectContaining({ dateFrom: "2026-10-31" }),
+      ),
+    );
+    vi.mocked(reportsApi.getMyReport).mockClear();
+    fireEvent.change(screen.getByLabelText("End date"), {
+      target: { value: "2026-10-01" },
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Start date must be on or before the end date",
+    );
+    expect(
+      screen.getByRole("button", { name: "Generate Payments XLSX" }),
+    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Print report" })).toBeDisabled();
+    expect(reportsApi.getMyReport).not.toHaveBeenCalled();
+    expect(reportsApi.exportData).not.toHaveBeenCalled();
+  });
+
   it("uses the backend catalog, filtered total and server pagination", async () => {
     open();
     await screen.findByText("PREVIEW", {}, { timeout: 5000 });

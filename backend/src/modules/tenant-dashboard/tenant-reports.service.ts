@@ -773,7 +773,7 @@ export class TenantReportsService {
       if (volume?.weight != null)
         metrics['Cargo weight (kg)'] = Number(volume.weight);
     }
-    const dimensions: { name: string; column: string }[] = [];
+    const dimensions: { name: string; column: string; label?: string }[] = [];
     if (query.tenantId === '*') {
       if (has('tenantId'))
         dimensions.push({ name: 'Tenant', column: field('tenantId') });
@@ -786,8 +786,12 @@ export class TenantReportsService {
       dimensions.push({ name: 'User role', column: field('role') });
     if (query.category === 'trips')
       dimensions.push(
-        { name: 'Driver', column: 't.driverId' },
-        { name: 'Truck', column: 't.truckId' },
+        {
+          name: 'Driver',
+          column: 't.driverId',
+          label: `NULLIF(TRIM(CONCAT(driver.firstName, ' ', driver.lastName)), '')`,
+        },
+        { name: 'Truck', column: 't.truckId', label: 'truck.plateNumber' },
       );
     if (query.category === 'cargo')
       dimensions.push({ name: 'Cargo owner', column: 'c.cargoOwnerId' });
@@ -806,6 +810,32 @@ export class TenantReportsService {
         .addOrderBy(dimension.column, 'ASC')
         .groupBy(dimension.column)
         .limit(20);
+      if (dimension.name === 'Tenant') {
+        grouped.leftJoin(
+          Tenant,
+          'reportTenant',
+          `reportTenant.id = ${dimension.column}`,
+        );
+        dimension.label = 'reportTenant.name';
+      }
+      if (['Cargo owner', 'Borrower'].includes(dimension.name)) {
+        const tenantColumn =
+          query.category === 'cargo' ? 'c.tenantId' : 'loan.tenant_id';
+        grouped
+          .leftJoin(
+            User,
+            'reportUser',
+            `reportUser.id = ${dimension.column} AND reportUser.tenantId = ${tenantColumn}`,
+          )
+          .leftJoin(
+            'reportUser.profile',
+            'reportProfile',
+            `reportProfile.tenantId = ${tenantColumn}`,
+          );
+        dimension.label = `COALESCE(NULLIF(TRIM(CONCAT(reportProfile.firstName, ' ', reportProfile.lastName)), ''), reportUser.email)`;
+      }
+      if (dimension.label)
+        grouped.addSelect(`MAX(${dimension.label})`, 'label');
       if (query.category === 'trips')
         grouped.addSelect(
           `COUNT(*) FILTER (WHERE t.status = 'COMPLETED')`,
@@ -814,7 +844,10 @@ export class TenantReportsService {
       for (const row of await grouped.getRawMany())
         breakdowns.push({
           dimension: dimension.name,
-          key: row.key || 'Unassigned',
+          key: dimension.label
+            ? row.label ||
+              (row.key ? `${dimension.name} unavailable` : 'Unassigned')
+            : row.key || 'Unassigned',
           count: Number(row.count),
           ...(row.completed === undefined
             ? {}
@@ -1188,6 +1221,10 @@ export class TenantReportsService {
             where: { id: scopedTenantId },
             select: { id: true, name: true },
           });
+    const reportAuthor = await this.userRepo.findOne({
+      where: { id: scope.userId, tenantId: scope.tenantId },
+      relations: ['profile'],
+    });
     const headers = rows[0]
       ? Object.keys(rows[0])
       : this.defaultHeaders(category);
@@ -1202,7 +1239,8 @@ export class TenantReportsService {
       summary: scope.result.summary,
       metadata: {
         generatedAt: new Date().toISOString(),
-        generatedBy: scope.email || scope.userId,
+        generatedBy:
+          this.userName(reportAuthor) || scope.email || 'Report user',
         tenantId: scopedTenantId,
         tenantName: scopedTenantId === '*' ? 'All tenants' : reportTenant?.name,
         dateBasis:
@@ -1581,11 +1619,15 @@ export class TenantReportsService {
     return trips.map((t) => ({
       Trip: t.tripNumber || t.id,
       Status: t.status || '',
-      Origin: locName(t.pickupLocation),
-      Destination: locName(t.deliveryLocation),
-      Truck: t.truck?.plateNumber || t.truckId || '',
-      Driver: t.driverId || '',
-      Cargo: t.loadId || '',
+      Origin: locName(t.pickupLocation) || locName(t.load?.origin),
+      Destination: locName(t.deliveryLocation) || locName(t.load?.destination),
+      Truck:
+        t.truck?.plateNumber ||
+        (t.truckId ? 'Truck unavailable' : 'Unassigned'),
+      Driver:
+        `${t.driver?.firstName || ''} ${t.driver?.lastName || ''}`.trim() ||
+        (t.driverId ? 'Driver unavailable' : 'Unassigned'),
+      Cargo: t.load?.title || (t.loadId ? 'Cargo unavailable' : 'Unassigned'),
       Completed: fmtDate(t.actualEndTime),
       AgreedPrice: Number(t.agreedPrice ?? 0),
       Currency: t.currencyCode || '',
