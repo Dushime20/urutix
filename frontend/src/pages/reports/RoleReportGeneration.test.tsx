@@ -91,6 +91,43 @@ beforeEach(() => {
 });
 
 describe("Shared reporting page", () => {
+  it("shows one category at a time and keeps the selected report while browsing", async () => {
+    vi.mocked(reportsApi.catalog).mockResolvedValue([
+      { id: "issues", title: "Issues", statuses: [] },
+      { id: "trips", title: "Trips", statuses: [] },
+      { id: "payments", title: "Payments", statuses: [] },
+    ]);
+    open();
+    await screen.findByText("PREVIEW");
+    expect(
+      screen.getByRole("button", { name: /Issues Delays/ }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(
+      screen.queryByRole("button", { name: /Trips Trip activity/ }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Operations 1/ }));
+    expect(
+      screen.getByRole("button", { name: /Trips Trip activity/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Issues Delays/ }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Issues selected")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: /Trips Trip activity/ }),
+    );
+    await waitFor(() =>
+      expect(reportsApi.getMyReport).toHaveBeenLastCalledWith(
+        expect.objectContaining({ category: "trips" }),
+      ),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Commercial 1/ }));
+    expect(
+      screen.getByRole("button", { name: /Payments Payment activity/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Trips selected")).toBeInTheDocument();
+  });
+
   it("applies a chosen date range to the preview and generated report", async () => {
     open();
     await screen.findByText("PREVIEW");

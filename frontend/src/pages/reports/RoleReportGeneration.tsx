@@ -29,6 +29,7 @@ import {
   ChevronDown,
   Landmark,
   ClipboardCheck,
+  CheckCircle2,
 } from "lucide-react";
 import { TranslatedText } from "../../components/translated-text";
 import { useAuth } from "../../contexts/AuthContext";
@@ -289,6 +290,7 @@ const RoleReportGeneration: React.FC = () => {
   const [reportId, setReportId] = useState<ReportId>(
     catalog[0]?.id || "issues",
   );
+  const [reportGroup, setReportGroup] = useState("");
   const [format, setFormat] = useState<ExportFormat>("xlsx");
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
@@ -380,6 +382,13 @@ const RoleReportGeneration: React.FC = () => {
   }, [catalog, reportId]);
 
   const def = catalog.find((r) => r.id === reportId) || catalog[0];
+  const availableGroups = GROUPS.filter((group) =>
+    catalog.some((r) => r.group === group),
+  );
+  const activeGroup = availableGroups.includes(reportGroup)
+    ? reportGroup
+    : def?.group;
+  const groupReports = catalog.filter((r) => r.group === activeGroup);
   const isTicketReport =
     reportId === "issues" || reportId === "support" || reportId === "disputes";
   const isAdminShell = location.pathname.startsWith("/admin/reports");
@@ -474,23 +483,28 @@ const RoleReportGeneration: React.FC = () => {
         <p>No reports are available for your account.</p>
       )}
       {!isAdminShell && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <div className="w-8 h-8 bg-[#2c5173]/10 rounded-xl flex items-center justify-center">
-                <FileSpreadsheet className="w-4 h-4 text-[#2c5173]" />
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 shrink-0 rounded-2xl bg-[#2c5173] flex items-center justify-center shadow-sm">
+                <FileSpreadsheet className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-xl font-black text-gray-900 dark:text-white">
-                <TranslatedText text="Generate Reports" />
-              </h1>
+              <div>
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#358b9b] dark:text-cyan-400">
+                  Reporting workspace
+                </p>
+                <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                  <TranslatedText text="Generate Reports" />
+                </h1>
+              </div>
             </div>
-            <p className="text-xs text-gray-500 dark:text-slate-400 ml-10">
+            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
               <TranslatedText text="Filter your own records and export as CSV, Excel, or PDF" />
             </p>
           </div>
           <button
             onClick={() => query.refetch()}
-            className="px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 rounded-xl text-xs font-bold hover:bg-gray-50 flex items-center gap-1.5"
+            className="self-start sm:self-center px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#358b9b] focus-visible:ring-offset-2 flex items-center gap-2 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Refresh data
           </button>
@@ -508,57 +522,119 @@ const RoleReportGeneration: React.FC = () => {
         </div>
       )}
 
-      {GROUPS.map((group) => {
-        const items = catalog.filter((r) => r.group === group);
-        if (!items.length) return null;
-        return (
-          <div key={group}>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-              {group}
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
-              {items.map((r) => {
-                const Icon = r.icon;
-                const active = r.id === reportId;
+      {catalog.length > 0 && (
+        <section
+          aria-labelledby="report-picker-heading"
+          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 sm:px-6 dark:border-slate-700">
+            <div className="flex items-center gap-3">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2c5173]/10 text-xs font-bold text-[#2c5173] dark:bg-slate-700 dark:text-slate-200">
+                01
+              </span>
+              <div>
+                <h2
+                  id="report-picker-heading"
+                  className="text-sm font-bold text-slate-900 dark:text-white"
+                >
+                  Choose your report
+                </h2>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  Select a report, then choose dates and export below.
+                </p>
+              </div>
+            </div>
+            {def && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#358b9b]/10 px-3 py-1.5 text-xs font-semibold text-[#2c5173] dark:bg-cyan-400/10 dark:text-cyan-300">
+                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                {def.label} selected
+              </span>
+            )}
+          </div>
+          <div className="flex flex-col md:flex-row">
+            <nav
+              aria-label="Report categories"
+              className="flex gap-2 overflow-x-auto border-b border-slate-100 bg-slate-50/70 p-3 md:w-52 md:shrink-0 md:flex-col md:border-b-0 md:border-r md:p-4 dark:border-slate-700 dark:bg-slate-900/30"
+            >
+              {availableGroups.map((group) => {
+                const selected = activeGroup === group;
                 return (
                   <button
-                    key={r.id}
-                    onClick={() => {
-                      setReportId(r.id);
-                      setStatus("");
-                      setPriority("");
-                      setTruckId("");
-                      setDriverId("");
-                      setCargoOwnerId("");
-                    }}
-                    className={`text-left p-3 rounded-2xl border transition-all ${
-                      active
-                        ? "border-[#2c5173] bg-[#2c5173]/5 shadow-sm"
-                        : "border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#2c5173]/40"
-                    }`}
+                    key={group}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => setReportGroup(group)}
+                    className={`flex shrink-0 items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#358b9b] ${selected ? "bg-[#2c5173] text-white shadow-sm" : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"}`}
                   >
-                    <div className="flex items-start gap-2.5">
-                      <div
-                        className={`w-8 h-8 rounded-xl flex items-center justify-center ${active ? "bg-[#2c5173] text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-500"}`}
-                      >
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-black text-gray-900 dark:text-white">
-                          {r.label}
-                        </p>
-                        <p className="text-[11px] text-gray-500 dark:text-slate-400 leading-snug mt-0.5">
-                          {r.description}
-                        </p>
-                      </div>
-                    </div>
+                    {group}
+                    <span
+                      className={`rounded px-1.5 py-0.5 text-[10px] ${selected ? "bg-white/15 text-white" : "bg-slate-200/60 text-slate-500 dark:bg-slate-700 dark:text-slate-400"}`}
+                    >
+                      {catalog.filter((r) => r.group === group).length}
+                    </span>
                   </button>
                 );
               })}
+            </nav>
+            <div className="min-w-0 flex-1 p-4 sm:p-5">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                  {activeGroup}
+                </h3>
+                <span className="text-xs text-slate-400">
+                  Choose one report
+                </span>
+              </div>
+              <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 dark:divide-slate-700 dark:border-slate-700">
+                {groupReports.map((r) => {
+                  const active = r.id === reportId;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => {
+                        setReportId(r.id);
+                        setStatus("");
+                        setPriority("");
+                        setTruckId("");
+                        setDriverId("");
+                        setCargoOwnerId("");
+                      }}
+                      className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#358b9b] ${active ? "bg-[#358b9b]/[0.08] dark:bg-cyan-500/10" : "bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700/50"}`}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${active ? "border-[#358b9b] dark:border-cyan-400" : "border-slate-300 dark:border-slate-500"}`}
+                      >
+                        {active && (
+                          <span className="h-2 w-2 rounded-full bg-[#358b9b] dark:bg-cyan-400" />
+                        )}
+                      </span>
+                      <span className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-5">
+                        <span
+                          className={`text-sm font-semibold sm:w-40 sm:shrink-0 ${active ? "text-[#2c5173] dark:text-cyan-300" : "text-slate-800 dark:text-slate-100"}`}
+                        >
+                          {r.label}
+                        </span>
+                        <span className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                          {r.description}
+                        </span>
+                      </span>
+                      {active && (
+                        <CheckCircle2
+                          className="h-4 w-4 shrink-0 text-[#358b9b] dark:text-cyan-400"
+                          aria-hidden="true"
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        );
-      })}
+        </section>
+      )}
 
       {def && (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-4 space-y-4">
