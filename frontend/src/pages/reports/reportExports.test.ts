@@ -56,6 +56,12 @@ describe("Report exports", () => {
     const workbook = download.mock.calls[0][0];
     const bytes = brandedWorkbookBytes(workbook);
     const zip = XLSX.CFB.read(bytes, { type: "array" });
+    // Excel rejects duplicate ZIP parts even when permissive readers open them.
+    expect(new Set(zip.FullPaths).size).toBe(zip.FullPaths.length);
+    const summaryXml = new TextDecoder().decode(
+      XLSX.CFB.find(zip, "/xl/worksheets/sheet2.xml")!.content as Uint8Array,
+    );
+    expect(summaryXml).toContain('r:id="rIdLogo"');
     expect(
       XLSX.CFB.find(zip, "/xl/media/urutix.png")?.content.length,
     ).toBeGreaterThan(100);

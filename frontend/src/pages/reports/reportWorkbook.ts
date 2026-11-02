@@ -14,7 +14,7 @@ export function brandedWorkbookBytes(workbook: XLSX.WorkBook): Uint8Array {
   const add = (path: string, content: string | Uint8Array) =>
     XLSX.CFB.utils.cfb_add(
       zip,
-      path,
+      "/" + path,
       typeof content === "string" ? new TextEncoder().encode(content) : content,
     );
   const index = workbook.SheetNames.indexOf("Report Summary") + 1;
