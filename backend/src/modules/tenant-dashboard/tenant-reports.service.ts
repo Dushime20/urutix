@@ -1270,7 +1270,11 @@ export class TenantReportsService {
       return `"${(/^[\s]*[=+@-]/.test(text) && typeof v !== 'number' ? "'" + text : text).replace(/"/g, '""')}"`;
     };
     return [
-      report.headers.map(esc).join(','),
+      report.headers
+        .map((header) =>
+          esc(header.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' ')),
+        )
+        .join(','),
       ...report.rows.map((r) => report.headers.map((h) => esc(r[h])).join(',')),
     ].join('\n');
   }

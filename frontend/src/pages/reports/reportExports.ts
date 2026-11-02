@@ -329,7 +329,7 @@ export function exportRows(
     XLSX.utils.book_append_sheet(wb, sheet, title.slice(0, 31));
     XLSX.utils.book_append_sheet(
       wb,
-      XLSX.utils.aoa_to_sheet(info),
+      XLSX.utils.aoa_to_sheet([["Report information", "Value"], ...info]),
       "Report Summary",
     );
     if (summary.amounts.length)
